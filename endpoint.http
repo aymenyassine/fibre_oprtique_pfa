@@ -1,0 +1,1332 @@
+### ============================================================
+### FIBRE OPTIQUE PLATFORM — TESTS COMPLETS CRUD
+### Compatible: IntelliJ HTTP Client / VS Code REST Client
+###
+### ORDRE D'EXÉCUTION RECOMMANDÉ:
+###   1. Auth (login admin) → copier le token dans @adminToken
+###   2. Users (créer staff)
+###   3. Network (datacenter → répartiteur → splitter → boîte)
+###   4. Offers (créer offres)
+###   5. Requests (cycle complet raccordement)
+###   6. Subscriptions
+###   7. Billing
+###   8. Support / Tickets
+###   9. Notifications
+### ============================================================
+
+@baseUrl    = http://localhost:8080
+@adminToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBmaWJyZS1vcHRpcXVlLmxvY2FsIiwiaWF0IjoxNzgxNzkxNzg3LCJleHAiOjE3ODE4NzgxODd9.zSchtWFz-bpZgzfcneyqKmpzMIXpcSaDzvhP2zDCp5BxH2l7iCg2pHTz3KiwhwQT
+@commercialToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJjb21tZXJjaWFsQGZpYnJlLmxvY2FsIiwiaWF0IjoxNzgxNzkzMjQ2LCJleHAiOjE3ODE4Nzk2NDZ9.yJ4diej8jFTl-Goz3LQmsRdEzfmBhSSDHaN6hvfePtUwC-h7LA4assfDrEhS23XI
+@techToken  = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZWNoQGZpYnJlLmxvY2FsIiwiaWF0IjoxNzgxNzkyNDg4LCJleHAiOjE3ODE4Nzg4ODh9.RiiAP5UBIkYPojIAN4BxLaIyMF4cJAUH9_xx-nYKJNabqrXhEHXP6YvgP2b8sJfA
+@supportToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJzdXBwb3J0QGZpYnJlLmxvY2FsIiwiaWF0IjoxNzgxNzkzMjc2LCJleHAiOjE3ODE4Nzk2NzZ9.GJPb1J4IRqTjP4-1te-fwZCyPo-sISYJXOB3fZQMI8MEz9g9bfE2f0MEJozepgFD
+@clientToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJwcm9zcGVjdEB0ZXN0LmNvbSIsImlhdCI6MTc4MTc5NDE1MSwiZXhwIjoxNzgxODgwNTUxfQ.zfmnlArt9e0EqRSF_Xt97NFO-m_-sCSCRk1ZponxsE6Db-mIYGSLt_ymLuEcHPA3
+### ============================================================
+### 1. AUTH
+### ============================================================
+
+### 1.1 Login Admin (compte créé automatiquement au démarrage)
+# → copier accessToken dans @adminToken
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fibre-optique.local",
+  "password": "AdminSecure1234!"
+}
+
+###
+
+### 1.2 Inscription publique Prospect (pas de champ role)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "nom": "Ayman",
+  "prenom": "Yassine",
+  "email": "prospect@test.com",
+  "password": "Y@ssine2003"
+}
+
+###
+
+### 1.3 Login Commercial (après création par admin — section 2)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "prospect@test.com",
+  "password": "Y@ssine2003"
+}
+
+###
+
+### 1.4 Login Technicien
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "tech@fibre.local",
+  "password": "Y@ssine2003"
+}
+
+###
+
+### 1.5 Login Support
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "commercial@fibre.local",
+  "password": "Y@ssine2003"
+}
+
+###
+
+### 1.6 Login Client
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "client@test.com",
+  "password": "Y@ssine2003"
+}
+
+###
+
+### 1.7 Refresh Token
+POST {{baseUrl}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "REPLACE_WITH_REFRESH_TOKEN"
+}
+
+###
+
+### 1.8 Logout
+POST {{baseUrl}}/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "REPLACE_WITH_REFRESH_TOKEN"
+}
+
+###
+
+
+### ============================================================
+### 2. USERS — Gestion des comptes (CRUD complet)
+### ============================================================
+
+### 2.1 CREATE — Admin crée compte COMMERCIAL
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Dupont",
+  "prenom": "Marie",
+  "email": "commercial@fibre.local",
+  "password": "Y@ssine2003",
+  "role": "COMMERCIAL"
+}
+
+###
+
+### 2.2 CREATE — Admin crée compte TECHNICIEN
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Martin",
+  "prenom": "Jean",
+  "email": "tech@fibre.local",
+  "password": "Y@ssine2003",
+  "role": "TECHNICIEN"
+}
+
+###
+
+### 2.3 CREATE — Admin crée compte SUPPORT
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Bernard",
+  "prenom": "Sophie",
+  "email": "support@fibre.local",
+  "password": "Y@ssine2003",
+  "role": "SUPPORT"
+}
+
+###
+
+### 2.4 CREATE — Admin crée compte CLIENT direct
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Client",
+  "prenom": "Direct",
+  "email": "client2@test.com",
+  "password": "Y@ssine2003",
+  "role": "CLIENT"
+}
+
+###
+
+### 2.5 READ — Liste paginée de tous les utilisateurs (ADMIN)
+GET {{baseUrl}}/api/v1/users?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.6 READ — Filtrer par rôle et statut
+GET {{baseUrl}}/api/v1/users?role=TECHNICIEN&enabled=true&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.7 READ — Recherche textuelle (nom/email)
+GET {{baseUrl}}/api/v1/users?query=Martin&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.8 READ — Get utilisateur par ID
+GET {{baseUrl}}/api/v1/users/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.9 READ — Mon propre profil (tout utilisateur)
+GET {{baseUrl}}/api/v1/users/me
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 2.10 UPDATE — Admin modifie un utilisateur (rôle + statut)
+PUT {{baseUrl}}/api/v1/users/2
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Dupont",
+  "prenom": "Marie",
+  "email": "commercial@fibre.local",
+  "role": "COMMERCIAL",
+  "enabled": true
+}
+
+###
+
+### 2.11 UPDATE — Utilisateur met à jour son propre profil
+PUT {{baseUrl}}/api/v1/users/3
+Content-Type: application/json
+Authorization: Bearer {{techToken}}
+
+{
+  "nom": "Martin",
+  "prenom": "Jean-Claude",
+  "email": "tech@fibre.local"
+}
+
+###
+
+### 2.12 DELETE — Désactivation soft (ADMIN)
+DELETE {{baseUrl}}/api/v1/users/5
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 3. NETWORK — Datacenter (CRUD complet)
+### ============================================================
+
+### 3.1 CREATE — Datacenter Paris
+POST {{baseUrl}}/api/v1/network/datacenters
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "DC-Paris-1",
+  "capacite": 500,
+  "longitude": 2.3488,
+  "latitude": 48.8534
+}
+
+###
+
+### 3.2 CREATE — Datacenter Lyon
+POST {{baseUrl}}/api/v1/network/datacenters
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "DC-Lyon-1",
+  "capacite": 300,
+  "longitude": 4.8357,
+  "latitude": 45.7640
+}
+
+###
+
+### 3.3 READ — Liste tous les datacenters
+GET {{baseUrl}}/api/v1/network/datacenters
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.4 READ — Datacenter par ID
+GET {{baseUrl}}/api/v1/network/datacenters/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 3.5 UPDATE — Modifier capacité datacenter
+PUT {{baseUrl}}/api/v1/network/datacenters/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "DC-Paris-1",
+  "capacite": 1000,
+  "longitude": 2.3488,
+  "latitude": 48.8534
+}
+
+###
+
+### 3.6 DELETE — Supprimer datacenter
+DELETE {{baseUrl}}/api/v1/network/datacenters/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+### ============================================================
+### 4. NETWORK — Répartiteur (CRUD complet)
+### ============================================================
+
+### 4.1 CREATE — Répartiteur lié au datacenter 1
+POST {{baseUrl}}/api/v1/network/repartiteurs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "REP-Paris-01",
+  "nbPorts": 48,
+  "longitude": 2.3400,
+  "latitude": 48.8600,
+  "datacenterId": 1
+}
+
+###
+
+### 4.2 CREATE — Second répartiteur
+POST {{baseUrl}}/api/v1/network/repartiteurs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "REP-Paris-02",
+  "nbPorts": 24,
+  "longitude": 2.3520,
+  "latitude": 48.8580,
+  "datacenterId": 1
+}
+
+###
+
+### 4.3 READ — Liste tous les répartiteurs
+GET {{baseUrl}}/api/v1/network/repartiteurs
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.4 READ — Répartiteur par ID
+GET {{baseUrl}}/api/v1/network/repartiteurs/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 4.5 UPDATE — Modifier ports répartiteur
+PUT {{baseUrl}}/api/v1/network/repartiteurs/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "REP-Paris-01",
+  "nbPorts": 96,
+  "longitude": 2.3400,
+  "latitude": 48.8600,
+  "datacenterId": 1
+}
+
+###
+
+### 4.6 DELETE — Supprimer répartiteur
+DELETE {{baseUrl}}/api/v1/network/repartiteurs/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 5. NETWORK — Splitter (CRUD complet)
+### ============================================================
+
+### 5.1 CREATE — Splitter 1:32 sur répartiteur 1
+POST {{baseUrl}}/api/v1/network/splitters
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "ratio": "1:32",
+  "nbSortie": 32,
+  "repartiteurId": 1
+}
+
+###
+
+### 5.2 CREATE — Splitter 1:64
+POST {{baseUrl}}/api/v1/network/splitters
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "ratio": "1:64",
+  "nbSortie": 64,
+  "repartiteurId": 1
+}
+
+###
+
+### 5.3 READ — Liste tous les splitters
+GET {{baseUrl}}/api/v1/network/splitters
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.4 READ — Splitter par ID
+GET {{baseUrl}}/api/v1/network/splitters/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 5.5 UPDATE — Modifier splitter
+PUT {{baseUrl}}/api/v1/network/splitters/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "ratio": "1:32",
+  "nbSortie": 32,
+  "repartiteurId": 1
+}
+
+###
+
+### 5.6 DELETE — Supprimer splitter
+DELETE {{baseUrl}}/api/v1/network/splitters/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+### ============================================================
+### 6. NETWORK — Boîte Client (CRUD + action connect)
+### ============================================================
+
+### 6.1 CREATE — Boîte client avec 8 ports disponibles
+POST {{baseUrl}}/api/v1/network/boites-client
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "BC-75009-001",
+  "nbPorts": 8,
+  "portsUtilises": 0,
+  "longitude": 2.3480,
+  "latitude": 48.8760,
+  "splitterId": 1
+}
+
+###
+
+### 6.2 CREATE — Deuxième boîte client
+POST {{baseUrl}}/api/v1/network/boites-client
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "BC-75009-002",
+  "nbPorts": 4,
+  "portsUtilises": 0,
+  "longitude": 2.3490,
+  "latitude": 48.8770,
+  "splitterId": 1
+}
+
+###
+
+### 6.3 READ — Liste toutes les boîtes client
+GET {{baseUrl}}/api/v1/network/boites-client
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6.4 READ — Boîte client par ID
+GET {{baseUrl}}/api/v1/network/boites-client/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6.5 UPDATE — Modifier boîte client (augmenter ports)
+PUT {{baseUrl}}/api/v1/network/boites-client/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "BC-75009-001",
+  "nbPorts": 16,
+  "portsUtilises": 2,
+  "longitude": 2.3480,
+  "latitude": 48.8760,
+  "splitterId": 1
+}
+
+###
+
+### 6.6 ACTION — Incrémenter port utilisé (raccordement physique)
+PATCH {{baseUrl}}/api/v1/network/boites-client/1/connect
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 6.7 DELETE — Supprimer boîte client
+DELETE {{baseUrl}}/api/v1/network/boites-client/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 7. NETWORK — Équipement (CRUD complet)
+### ============================================================
+
+### 7.1 CREATE — OLT sur répartiteur 1
+POST {{baseUrl}}/api/v1/network/equipements
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "OLT-Paris-01",
+  "modele": "Huawei MA5800-X7",
+  "numSerie": "SN-OLT-001",
+  "ip": "192.168.1.10",
+  "status": "ACTIF",
+  "type": "OLT",
+  "repartiteurId": 1
+}
+
+###
+
+### 7.2 CREATE — Switch sur répartiteur 1
+POST {{baseUrl}}/api/v1/network/equipements
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "SW-Paris-01",
+  "modele": "Cisco Catalyst 2960",
+  "numSerie": "SN-SW-001",
+  "ip": "192.168.1.20",
+  "status": "ACTIF",
+  "type": "SWITCH",
+  "repartiteurId": 1
+}
+
+###
+
+### 7.3 READ — Liste tous les équipements
+GET {{baseUrl}}/api/v1/network/equipements
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 7.4 READ — Équipement par ID
+GET {{baseUrl}}/api/v1/network/equipements/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 7.5 UPDATE — Passer équipement en maintenance (TECHNICIEN)
+PUT {{baseUrl}}/api/v1/network/equipements/1
+Content-Type: application/json
+Authorization: Bearer {{techToken}}
+
+{
+  "nom": "OLT-Paris-01",
+  "modele": "Huawei MA5800-X7",
+  "numSerie": "SN-OLT-001",
+  "ip": "192.168.1.10",
+  "status": "MAINTENANCE",
+  "type": "OLT",
+  "repartiteurId": 1
+}
+
+###
+
+### 7.6 UPDATE — Remettre équipement en service
+PUT {{baseUrl}}/api/v1/network/equipements/1
+Content-Type: application/json
+Authorization: Bearer {{techToken}}
+
+{
+  "nom": "OLT-Paris-01",
+  "modele": "Huawei MA5800-X7",
+  "numSerie": "SN-OLT-001",
+  "ip": "192.168.1.10",
+  "status": "ACTIF",
+  "type": "OLT",
+  "repartiteurId": 1
+}
+
+###
+
+### 7.7 DELETE — Supprimer équipement (ADMIN)
+DELETE {{baseUrl}}/api/v1/network/equipements/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 8. NETWORK — Chemin Fibre (CRUD complet)
+### ============================================================
+
+### 8.1 CREATE — Chemin fibre monomode OK
+POST {{baseUrl}}/api/v1/network/chemins-fibre
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "sourceNodeId": 1,
+  "destNodeId": 2,
+  "longueur": 2.5,
+  "typeFibre": "MONOMODE",
+  "statut": "OK"
+}
+
+###
+
+### 8.2 CREATE — Deuxième chemin fibre
+POST {{baseUrl}}/api/v1/network/chemins-fibre
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "sourceNodeId": 2,
+  "destNodeId": 3,
+  "longueur": 1.2,
+  "typeFibre": "MONOMODE",
+  "statut": "OK"
+}
+
+###
+
+### 8.3 READ — Liste tous les chemins fibre
+GET {{baseUrl}}/api/v1/network/chemins-fibre
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 8.4 READ — Chemin fibre par ID
+GET {{baseUrl}}/api/v1/network/chemins-fibre/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 8.5 UPDATE — Signaler un incident (TECHNICIEN)
+PUT {{baseUrl}}/api/v1/network/chemins-fibre/1
+Content-Type: application/json
+Authorization: Bearer {{techToken}}
+
+{
+  "sourceNodeId": 1,
+  "destNodeId": 2,
+  "longueur": 2.5,
+  "typeFibre": "MONOMODE",
+  "statut": "INCIDENT"
+}
+
+###
+
+### 8.6 UPDATE — Résoudre l'incident, remettre en service
+PUT {{baseUrl}}/api/v1/network/chemins-fibre/1
+Content-Type: application/json
+Authorization: Bearer {{techToken}}
+
+{
+  "sourceNodeId": 1,
+  "destNodeId": 2,
+  "longueur": 2.5,
+  "typeFibre": "MONOMODE",
+  "statut": "OK"
+}
+
+###
+
+### 8.7 DELETE — Supprimer chemin fibre
+DELETE {{baseUrl}}/api/v1/network/chemins-fibre/2
+Authorization: Bearer {{adminToken}}
+
+###
+
+### ============================================================
+### 9. NETWORK — Éligibilité & Statut réseau
+### ============================================================
+
+### 9.1 Vérifier éligibilité par coordonnées GPS (zone couverte)
+GET {{baseUrl}}/api/v1/network/eligibility?longitude=2.3480&latitude=48.8760
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 9.2 Vérifier éligibilité — zone non couverte
+GET {{baseUrl}}/api/v1/network/eligibility?longitude=5.3698&latitude=43.2965
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 9.3 Statut réseau global (staff)
+GET {{baseUrl}}/api/v1/network/status
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 10. OFFERS — Catalogue des offres (CRUD complet)
+### ============================================================
+
+### 10.1 CREATE — Offre FTTH sans engagement
+POST {{baseUrl}}/api/v1/offers
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Fibre 500 Mbps",
+  "description": "Offre FTTH 500 Mbps sans engagement",
+  "debitMontant": 200,
+  "debitDescendant": 500,
+  "prixHT": 24.90,
+  "tauxTVA": 20.00,
+  "typeEngagement": "SANS_ENGAGEMENT",
+  "dureeMois": 0,
+  "technologie": "FTTH",
+  "actif": true
+}
+
+###
+
+### 10.2 CREATE — Offre FTTH 12 mois
+POST {{baseUrl}}/api/v1/offers
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Fibre 1 Gbps Pro",
+  "description": "Offre FTTH 1 Gbps engagement 12 mois",
+  "debitMontant": 500,
+  "debitDescendant": 1000,
+  "prixHT": 34.90,
+  "tauxTVA": 20.00,
+  "typeEngagement": "DOUZE_MOIS",
+  "dureeMois": 12,
+  "technologie": "FTTH",
+  "actif": true
+}
+
+###
+
+### 10.3 CREATE — Offre FTTB 24 mois
+POST {{baseUrl}}/api/v1/offers
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Fibre Business 2 Gbps",
+  "description": "Offre FTTB entreprise 24 mois",
+  "debitMontant": 1000,
+  "debitDescendant": 2000,
+  "prixHT": 59.90,
+  "tauxTVA": 20.00,
+  "typeEngagement": "VINGT_QUATRE_MOIS",
+  "dureeMois": 24,
+  "technologie": "FTTB",
+  "actif": true
+}
+
+###
+
+### 10.4 READ — Catalogue public (offres actives)
+GET {{baseUrl}}/api/v1/offers
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 10.5 READ — Filtrer par technologie
+GET {{baseUrl}}/api/v1/offers?technologie=FTTH
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 10.6 READ — Filtrer par type d'engagement
+GET {{baseUrl}}/api/v1/offers?typeEngagement=SANS_ENGAGEMENT
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 10.7 READ — Toutes les offres (actives + inactives) — ADMIN
+GET {{baseUrl}}/api/v1/offers/all
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 10.8 READ — Offre par ID
+GET {{baseUrl}}/api/v1/offers/1
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 10.9 READ — Résumé léger d'une offre
+GET {{baseUrl}}/api/v1/offers/1/summary
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 10.10 UPDATE — Modifier prix et description (ADMIN)
+PUT {{baseUrl}}/api/v1/offers/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "nom": "Fibre 500 Mbps",
+  "description": "Offre FTTH 500 Mbps sans engagement — nouveau prix",
+  "debitMontant": 200,
+  "debitDescendant": 500,
+  "prixHT": 21.90,
+  "tauxTVA": 20.00,
+  "typeEngagement": "SANS_ENGAGEMENT",
+  "dureeMois": 0,
+  "technologie": "FTTH",
+  "actif": true
+}
+
+###
+
+### 10.11 PATCH — Désactiver une offre (soft-delete du catalogue)
+PATCH {{baseUrl}}/api/v1/offers/3/deactivate
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 10.12 DELETE — Supprimer offre sans abonnements liés
+DELETE {{baseUrl}}/api/v1/offers/3
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 11. REQUESTS — Demandes de raccordement (cycle complet)
+### ============================================================
+
+### 11.1 ÉTAPE 1 — Prospect soumet une demande
+POST {{baseUrl}}/api/v1/requests
+Content-Type: application/json
+
+{
+  "prospectNom": "Benali",
+  "prospectPrenom": "Yassine",
+  "prospectEmail": "prospect@test.com",
+  "prospectTelephone": "+33612345678",
+  "adresseRaccordement": "8 Boulevard Haussmann, 75009 Paris",
+  "longitude": 2.3480,
+  "latitude": 48.8760
+}
+
+###
+
+### 11.2 READ — Liste paginée des demandes (staff)
+GET {{baseUrl}}/api/v1/requests?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 11.3 READ — Filtrer par statut
+GET {{baseUrl}}/api/v1/requests?statut=ELIGIBILITE_VERIFIEE&page=0&size=10
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 11.4 READ — Recherche par mot-clé
+GET {{baseUrl}}/api/v1/requests?keyword=Benali&page=0&size=10
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 11.5 READ — Détail d'une demande par ID
+GET {{baseUrl}}/api/v1/requests/1
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 11.6 ÉTAPE 2 — Commercial génère le devis + choisit l'offre
+PUT {{baseUrl}}/api/v1/requests/4/devis
+Content-Type: application/json
+Authorization: Bearer {{commercialToken}}
+
+{
+  "montantDevis": 150.00,
+  "offreId": 1
+}
+
+###
+
+### 11.7 ÉTAPE 3 — Prospect accepte le devis
+PUT {{baseUrl}}/api/v1/requests/4/accept
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 11.8 ÉTAPE 4 — Admin/Commercial planifie l'installation
+PUT {{baseUrl}}/api/v1/requests/4/schedule
+Content-Type: application/json
+Authorization: Bearer {{commercialToken}}
+
+{
+  "technicienId": 3,
+  "datePlanification": "2026-07-15T08:00:00Z"
+}
+
+###
+
+### 11.9 ÉTAPE 5 — Technicien marque le raccordement comme terminé
+PUT {{baseUrl}}/api/v1/requests/1/complete
+Authorization: Bearer {{techToken}}
+
+###
+
+### 11.10 REJECT — Admin rejette une demande (avant TERMINE)
+PUT {{baseUrl}}/api/v1/requests/2/reject
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "raison": "Zone non couverte par notre infrastructure actuelle."
+}
+
+###
+
+
+### ============================================================
+### 12. SUBSCRIPTIONS — Abonnements (CRUD + cycle de vie)
+### ============================================================
+
+### 12.1 CREATE — Commercial crée un abonnement pour un client
+POST {{baseUrl}}/api/v1/subscriptions
+Content-Type: application/json
+Authorization: Bearer {{commercialToken}}
+
+{
+  "clientId": 6,
+  "offreId": 1
+}
+
+###
+
+### 12.2 CREATE — Abonnement offre premium pour autre client
+POST {{baseUrl}}/api/v1/subscriptions
+Content-Type: application/json
+Authorization: Bearer {{commercialToken}}
+
+{
+  "clientId": 4,
+  "offreId": 2
+}
+
+###
+
+### 12.3 READ — Liste tous les abonnements (staff)
+GET {{baseUrl}}/api/v1/subscriptions
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 12.4 READ — Abonnement par ID
+GET {{baseUrl}}/api/v1/subscriptions/1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 12.5 READ — Abonnements d'un client (admin ou le client lui-même)
+GET {{baseUrl}}/api/v1/subscriptions/client/4
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 12.6 READ — Mes abonnements (client connecté)
+GET {{baseUrl}}/api/v1/subscriptions/client/4
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 12.7 LIFECYCLE — Suspendre un abonnement
+PUT {{baseUrl}}/api/v1/subscriptions/1/suspend
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 12.8 LIFECYCLE — Réactiver un abonnement suspendu
+PUT {{baseUrl}}/api/v1/subscriptions/1/reactivate
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 12.9 LIFECYCLE — Changer d'offre (upsell/downgrade)
+PUT {{baseUrl}}/api/v1/subscriptions/1/change-offer
+Content-Type: application/json
+Authorization: Bearer {{commercialToken}}
+
+{
+  "newOffreId": 2
+}
+
+###
+
+### 12.10 LIFECYCLE — Résilier un abonnement
+PUT {{baseUrl}}/api/v1/subscriptions/2/resilie
+Authorization: Bearer {{commercialToken}}
+
+###
+
+### 12.11 READ — Métadonnées du contrat PDF
+GET {{baseUrl}}/api/v1/subscriptions/1/contract
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 12.12 READ — Télécharger le contrat PDF
+GET {{baseUrl}}/api/v1/subscriptions/1/contract/download
+Authorization: Bearer {{clientToken}}
+
+###
+
+
+### ============================================================
+### 13. BILLING — Facturation (CRUD + paiement + stats)
+### ============================================================
+
+### 13.1 READ — Mes factures (client authentifié)
+GET {{baseUrl}}/api/v1/billing/my-invoices
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 13.2 READ — Liste paginée toutes les factures (staff)
+GET {{baseUrl}}/api/v1/billing/invoices?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.3 READ — Filtrer factures par clientId
+GET {{baseUrl}}/api/v1/billing/invoices?clientId=4&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.4 READ — Filtrer factures par statut
+GET {{baseUrl}}/api/v1/billing/invoices?statut=EN_ATTENTE&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.5 READ — Filtrer factures par période
+GET {{baseUrl}}/api/v1/billing/invoices?from=2026-01-01&to=2026-12-31&page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.6 READ — Détail d'une facture par ID
+GET {{baseUrl}}/api/v1/billing/invoices/1
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 13.7 READ — Télécharger le PDF d'une facture
+GET {{baseUrl}}/api/v1/billing/invoices/1/download
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 13.8 ACTION — Enregistrer un paiement
+POST {{baseUrl}}/api/v1/billing/invoices/1/pay
+Content-Type: application/json
+Authorization: Bearer {{clientToken}}
+
+{
+  "montant": 29.88
+}
+
+###
+
+### 13.9 ACTION — Annuler une facture (admin/commercial)
+PATCH {{baseUrl}}/api/v1/billing/invoices/2/cancel
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.10 READ — Statistiques de facturation du mois courant
+GET {{baseUrl}}/api/v1/billing/stats
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.11 ADMIN — Déclencher manuellement la génération mensuelle
+POST {{baseUrl}}/api/v1/billing/admin/generate-invoices
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 13.12 ADMIN — Déclencher manuellement le contrôle des retards
+POST {{baseUrl}}/api/v1/billing/admin/check-overdue
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 14. SUPPORT — Tickets (CRUD + cycle de vie complet)
+### ============================================================
+
+### 14.1 CREATE — Client ouvre un ticket HAUTE priorité
+POST {{baseUrl}}/api/v1/tickets
+Content-Type: application/json
+Authorization: Bearer {{clientToken}}
+
+{
+  "titre": "Coupure internet depuis ce matin",
+  "description": "Ma connexion fibre est coupée depuis 8h. Tous les voyants de la box sont rouges.",
+  "priorite": "HAUTE"
+}
+
+###
+
+### 14.2 CREATE — Client ouvre un ticket MOYENNE priorité
+POST {{baseUrl}}/api/v1/tickets
+Content-Type: application/json
+Authorization: Bearer {{clientToken}}
+
+{
+  "titre": "Débit ralenti le soir",
+  "description": "Entre 20h et 22h, le débit descend à moins de 50 Mbps alors que mon offre est 500 Mbps.",
+  "priorite": "MOYENNE"
+}
+
+###
+
+### 14.3 CREATE — Staff ouvre un ticket au nom d'un client
+POST {{baseUrl}}/api/v1/tickets
+Content-Type: application/json
+Authorization: Bearer {{supportToken}}
+
+{
+  "titre": "Demande de changement d'adresse MAC",
+  "description": "Le client souhaite changer l'adresse MAC de son routeur.",
+  "priorite": "BASSE",
+  "clientId": 4
+}
+
+###
+
+### 14.4 READ — Liste paginée de tous les tickets (staff)
+GET {{baseUrl}}/api/v1/tickets?page=0&size=10
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.5 READ — Filtrer par statut
+GET {{baseUrl}}/api/v1/tickets?statut=OUVERT&page=0&size=10
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.6 READ — Filtrer par priorité
+GET {{baseUrl}}/api/v1/tickets?priorite=HAUTE&page=0&size=10
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.7 READ — Filtrer par clientId
+GET {{baseUrl}}/api/v1/tickets?clientId=4&page=0&size=10
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.8 READ — Filtrer par agentId
+GET {{baseUrl}}/api/v1/tickets?agentId=5&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 14.9 READ — Recherche par mot-clé
+GET {{baseUrl}}/api/v1/tickets?keyword=coupure&page=0&size=10
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.10 READ — Mes tickets (client)
+GET {{baseUrl}}/api/v1/tickets/my-tickets
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 14.11 READ — Détail d'un ticket par ID
+GET {{baseUrl}}/api/v1/tickets/1
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 14.12 READ — Messages d'un ticket (conversation)
+GET {{baseUrl}}/api/v1/tickets/1/messages
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 14.13 REPLY — Agent répond au ticket (passe en EN_COURS)
+POST {{baseUrl}}/api/v1/tickets/1/replies
+Content-Type: application/json
+Authorization: Bearer {{supportToken}}
+
+{
+  "message": "Bonjour, nous avons bien pris en compte votre signalement. Notre équipe technique est en train d'analyser l'incident. Nous vous tiendrons informé."
+}
+
+###
+
+### 14.14 REPLY — Client répond à l'agent
+POST {{baseUrl}}/api/v1/tickets/1/replies
+Content-Type: application/json
+Authorization: Bearer {{clientToken}}
+
+{
+  "message": "Merci pour votre réponse. Je confirme que la coupure a démarré à 8h05 ce matin."
+}
+
+###
+
+### 14.15 ACTION — Assigner un agent au ticket
+PUT {{baseUrl}}/api/v1/tickets/1/assign
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "agentId": 5
+}
+
+###
+
+### 14.16 ACTION — Résoudre le ticket
+PUT {{baseUrl}}/api/v1/tickets/1/resolve
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.17 ACTION — Fermer le ticket (après résolution)
+PUT {{baseUrl}}/api/v1/tickets/1/close
+Authorization: Bearer {{supportToken}}
+
+###
+
+### 14.18 ADMIN — Déclencher manuellement le contrôle SLA
+POST {{baseUrl}}/api/v1/tickets/admin/check-sla
+Authorization: Bearer {{adminToken}}
+
+###
+
+
+### ============================================================
+### 15. NOTIFICATIONS (CRUD + envoi manuel + retry)
+### ============================================================
+
+### 15.1 READ — Mes notifications in-app (client paginé)
+GET {{baseUrl}}/api/v1/notifications/me?page=0&size=10
+Authorization: Bearer {{clientToken}}
+
+###
+
+### 15.2 READ — Notifications d'un destinataire par email (ADMIN)
+GET {{baseUrl}}/api/v1/notifications?email=client@test.com
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 15.3 READ — Liste des notifications en échec (ADMIN)
+GET {{baseUrl}}/api/v1/notifications/failed
+Authorization: Bearer {{adminToken}}
+
+###
+
+### 15.4 CREATE — Envoyer un email manuellement (ADMIN)
+POST {{baseUrl}}/api/v1/notifications/send
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "destinataire": "client@test.com",
+  "sujet": "Maintenance planifiée",
+  "contenu": "Bonjour, une maintenance est prévue le 20 juin de 2h à 4h du matin. Nous vous prions de nous excuser pour la gêne occasionnée.",
+  "typeCanal": "EMAIL"
+}
+
+###
+
+### 15.5 CREATE — Envoyer un SMS manuellement (ADMIN)
+POST {{baseUrl}}/api/v1/notifications/send
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "destinataire": "client@test.com",
+  "sujet": "SMS",
+  "contenu": "Votre raccordement fibre est confirmé pour le 15 juillet à 9h.",
+  "typeCanal": "SMS"
+}
+
+###
+
+### 15.6 CREATE — Créer une notification in-app (ADMIN)
+POST {{baseUrl}}/api/v1/notifications/send
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "destinataire": "client@test.com",
+  "sujet": "Nouvelle facture disponible",
+  "contenu": "Votre facture du mois de juin est disponible dans votre espace client.",
+  "typeCanal": "IN_APP"
+}
+
+###
+
+### 15.7 ACTION — Relancer les notifications en échec (ADMIN)
+POST {{baseUrl}}/api/v1/notifications/retry-failed
+Authorization: Bearer {{adminToken}}
+
+###
+

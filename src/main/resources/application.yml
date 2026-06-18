@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: fibre-optique-platform
+  
+  # Configuration Database Unique
+  datasource:
+    url: jdbc:mysql://localhost:3307/fibre_optique_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: Y@ssine2003
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA & Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Configuration Mail — Gmail SMTP
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: fibre_optique
+    password: zfee oojf whjn klat
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# Sécurité & JWT Config
+application:
+  security:
+    jwt:
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000 # 1 jour en ms
+      refresh-token:
+        expiration: 604800000 # 7 jours en ms
+
+# App-specific config
+app:
+  init:
+    admin:
+      email: ${ADMIN_EMAIL:admin@fibre-optique.local}
+      password: ${ADMIN_PASSWORD:AdminSecure1234!}
+      nom: Admin
+      prenom: Système
+  storage:
+    contracts-dir: ./data/contracts
+    invoices-dir: ./data/invoices
+  notification:
+    admin-email: admin@fibre-optique.local
+
+# Configuration Logging
+logging:
+  level:
+    root: INFO
+    com.fibre.optique: DEBUG
+    org.springframework.security: INFO
+    org.springframework.mail: DEBUG
