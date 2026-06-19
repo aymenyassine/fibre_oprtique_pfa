@@ -2,6 +2,7 @@ package com.fibre.optique.billing.service;
 
 import com.fibre.optique.billing.dto.BillingStatsDto;
 import com.fibre.optique.billing.dto.FactureDto;
+import com.fibre.optique.billing.dto.MonthlyBillingStatsDto;
 import com.fibre.optique.billing.dto.PaymentRequest;
 import com.fibre.optique.billing.entity.Facture;
 import com.fibre.optique.billing.entity.FactureStatus;
@@ -77,13 +78,24 @@ public class BillingService {
     }
 
     /** Loads raw invoice bytes for download. */
+    @Transactional
     public byte[] downloadInvoicePdf(Long id) throws IOException {
         Facture facture = loadEntity(id);
-        if (facture.getPdfStorageKey() == null) {
-            throw new BillingValidationException(
-                    "Aucun PDF généré pour la facture : " + facture.getReference());
+        String key = facture.getPdfStorageKey();
+        if (key == null || !invoicePdfFileExists(key)) {
+            key = invoicePdfService.generate(facture);
+            facture.setPdfStorageKey(key);
+            factureRepository.save(facture);
         }
-        return invoicePdfService.read(facture.getPdfStorageKey());
+        return invoicePdfService.read(key);
+    }
+
+    private boolean invoicePdfFileExists(String key) {
+        if (key == null) return false;
+        java.nio.file.Path filePath = java.nio.file.Paths.get(key);
+        if (java.nio.file.Files.exists(filePath)) return true;
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get(".").resolve(key))) return true;
+        return java.nio.file.Files.exists(java.nio.file.Paths.get("./data").resolve(key));
     }
 
     // =========================================================================
@@ -166,6 +178,57 @@ public class BillingService {
                 .chiffreAffairesMoisCourant(ca)
                 .montantImpayeTotal(impaye)
                 .build();
+    }
+
+    public List<MonthlyBillingStatsDto> getMonthlyStats(int months) {
+        List<Facture> all = factureRepository.findAll();
+        List<MonthlyBillingStatsDto> stats = new java.util.ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (int i = months - 1; i >= 0; i--) {
+            LocalDate monthDate = today.minusMonths(i);
+            LocalDate start = monthDate.withDayOfMonth(1);
+            LocalDate end = monthDate.withDayOfMonth(monthDate.lengthOfMonth());
+
+            String monthLabel = getFrenchMonthLabel(monthDate);
+
+            BigDecimal revenue = all.stream()
+                    .filter(f -> f.getStatut() == FactureStatus.PAYEE
+                            && !f.getDateEmission().isBefore(start)
+                            && !f.getDateEmission().isAfter(end))
+                    .map(Facture::getMontantTTC)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            long invoicesCreated = all.stream()
+                    .filter(f -> !f.getDateEmission().isBefore(start)
+                            && !f.getDateEmission().isAfter(end))
+                    .count();
+
+            stats.add(MonthlyBillingStatsDto.builder()
+                    .month(monthLabel)
+                    .revenue(revenue)
+                    .invoicesCreated(invoicesCreated)
+                    .build());
+        }
+        return stats;
+    }
+
+    private String getFrenchMonthLabel(LocalDate date) {
+        return switch (date.getMonthValue()) {
+            case 1 -> "Jan";
+            case 2 -> "Fév";
+            case 3 -> "Mar";
+            case 4 -> "Avr";
+            case 5 -> "Mai";
+            case 6 -> "Juin";
+            case 7 -> "Juil";
+            case 8 -> "Août";
+            case 9 -> "Sep";
+            case 10 -> "Oct";
+            case 11 -> "Nov";
+            case 12 -> "Déc";
+            default -> "";
+        };
     }
 
     // =========================================================================
@@ -257,7 +320,7 @@ public class BillingService {
     // =========================================================================
 
     private Facture loadEntity(Long id) {
-        return factureRepository.findById(id)
+        return factureRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new FactureNotFoundException(id));
     }
 

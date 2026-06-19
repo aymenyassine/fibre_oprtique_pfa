@@ -5,6 +5,7 @@ import com.fibre.optique.network.entity.*;
 import com.fibre.optique.network.exception.NetworkResourceNotFoundException;
 import com.fibre.optique.network.exception.NetworkValidationException;
 import com.fibre.optique.network.repository.*;
+import com.fibre.optique.support.repository.TicketRepository;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -36,19 +37,22 @@ public class NetworkService {
     private final BoiteClientRepository   boiteClientRepository;
     private final EquipementRepository    equipementRepository;
     private final CheminFibreRepository   cheminFibreRepository;
+    private final TicketRepository        ticketRepository;
 
     public NetworkService(DatacenterRepository datacenterRepository,
                           RepartiteurRepository repartiteurRepository,
                           SplitterRepository splitterRepository,
                           BoiteClientRepository boiteClientRepository,
                           EquipementRepository equipementRepository,
-                          CheminFibreRepository cheminFibreRepository) {
+                          CheminFibreRepository cheminFibreRepository,
+                          TicketRepository ticketRepository) {
         this.datacenterRepository  = datacenterRepository;
         this.repartiteurRepository = repartiteurRepository;
         this.splitterRepository    = splitterRepository;
         this.boiteClientRepository = boiteClientRepository;
         this.equipementRepository  = equipementRepository;
         this.cheminFibreRepository = cheminFibreRepository;
+        this.ticketRepository      = ticketRepository;
     }
 
     // =========================================================================
@@ -481,10 +485,39 @@ public class NetworkService {
                 .cheminsEnIncident(incidents.size())
                 .activeIncidents(incidents.stream().map(CheminFibreDto::fromEntity).toList())
                 .build();
-    }
+     }
 
-    // =========================================================================
-    // PRIVATE HELPERS
+     public List<IncidentStatsDto> getIncidentStats(int days) {
+         List<com.fibre.optique.support.entity.Ticket> tickets = ticketRepository.findAll();
+         List<IncidentStatsDto> stats = new java.util.ArrayList<>();
+         java.time.LocalDate today = java.time.LocalDate.now();
+
+         for (int i = days - 1; i >= 0; i--) {
+             java.time.LocalDate date = today.minusDays(i);
+
+             long newIncidents = tickets.stream()
+                     .filter(t -> ("TECHNIQUE".equals(t.getCategorie()) || "CONNEXION".equals(t.getCategorie()))
+                             && t.getDateCreation() != null
+                             && java.time.LocalDate.ofInstant(t.getDateCreation(), java.time.ZoneId.systemDefault()).equals(date))
+                     .count();
+
+             long resolved = tickets.stream()
+                     .filter(t -> ("TECHNIQUE".equals(t.getCategorie()) || "CONNEXION".equals(t.getCategorie()))
+                             && t.getDateResolution() != null
+                             && java.time.LocalDate.ofInstant(t.getDateResolution(), java.time.ZoneId.systemDefault()).equals(date))
+                     .count();
+
+             stats.add(IncidentStatsDto.builder()
+                     .date(date.toString())
+                     .newIncidents(newIncidents)
+                     .resolved(resolved)
+                     .build());
+         }
+         return stats;
+     }
+
+     // =========================================================================
+     // PRIVATE HELPERS
     // =========================================================================
 
     /** Builds a JTS Point with WGS84 SRID from longitude/latitude. */

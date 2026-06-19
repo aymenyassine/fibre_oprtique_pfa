@@ -46,4 +46,8 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
     /** Next sequence number for the current year — used to build the FAC-YYYY-NNNN reference. */
     @Query("SELECT COUNT(f) FROM Facture f WHERE YEAR(f.dateEmission) = :year")
     long countByYear(@Param("year") int year);
+
+    /** Fetch with client, abonnement, and offer eagerly for billing / PDF generation. */
+    @Query("SELECT f FROM Facture f JOIN FETCH f.client JOIN FETCH f.abonnement a JOIN FETCH a.offre WHERE f.id = :id")
+    java.util.Optional<Facture> findByIdWithDetails(@Param("id") Long id);
 }

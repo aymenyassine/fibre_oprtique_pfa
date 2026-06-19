@@ -301,21 +301,38 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ContratNotFoundException(abonnementId));
     }
 
+    @Transactional
     public byte[] downloadContrat(Long abonnementId) throws IOException {
         Contrat contrat = contratRepository.findByAbonnementId(abonnementId)
                 .orElseThrow(() -> new ContratNotFoundException(abonnementId));
 
-        java.nio.file.Path filePath = java.nio.file.Paths.get(contrat.getPdfStorageKey());
+        String key = contrat.getPdfStorageKey();
+        if (key == null || key.contains("ERROR-") || !contractPdfFileExists(key)) {
+            Abonnement abonnement = loadAbonnement(abonnementId);
+            key = contractPdfService.generate(abonnement);
+            contrat.setPdfStorageKey(key);
+            contratRepository.save(contrat);
+        }
+
+        java.nio.file.Path filePath = java.nio.file.Paths.get(key);
         if (!java.nio.file.Files.exists(filePath)) {
             // Try resolving relative to working directory
-            filePath = java.nio.file.Paths.get(".").resolve(contrat.getPdfStorageKey());
+            filePath = java.nio.file.Paths.get(".").resolve(key);
         }
         if (!java.nio.file.Files.exists(filePath)) {
             // Try resolving relative to data directory
-            filePath = java.nio.file.Paths.get("./data").resolve(contrat.getPdfStorageKey());
+            filePath = java.nio.file.Paths.get("./data").resolve(key);
         }
 
         return java.nio.file.Files.readAllBytes(filePath);
+    }
+
+    private boolean contractPdfFileExists(String key) {
+        if (key == null) return false;
+        java.nio.file.Path filePath = java.nio.file.Paths.get(key);
+        if (java.nio.file.Files.exists(filePath)) return true;
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get(".").resolve(key))) return true;
+        return java.nio.file.Files.exists(java.nio.file.Paths.get("./data").resolve(key));
     }
 
     // =========================================================================

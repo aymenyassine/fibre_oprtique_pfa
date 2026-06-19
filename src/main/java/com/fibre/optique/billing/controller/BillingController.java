@@ -2,6 +2,7 @@ package com.fibre.optique.billing.controller;
 
 import com.fibre.optique.billing.dto.BillingStatsDto;
 import com.fibre.optique.billing.dto.FactureDto;
+import com.fibre.optique.billing.dto.MonthlyBillingStatsDto;
 import com.fibre.optique.billing.dto.PaymentRequest;
 import com.fibre.optique.billing.entity.FactureStatus;
 import com.fibre.optique.billing.service.BillingService;
@@ -155,6 +156,13 @@ public class BillingController {
     @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL')")
     public ResponseEntity<BillingStatsDto> getStats() {
         return ResponseEntity.ok(billingService.getStats());
+    }
+
+    @GetMapping("/stats/monthly")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL')")
+    public ResponseEntity<List<MonthlyBillingStatsDto>> getMonthlyStats(
+            @RequestParam(defaultValue = "6") int months) {
+        return ResponseEntity.ok(billingService.getMonthlyStats(months));
     }
 
     // -------------------------------------------------------------------------

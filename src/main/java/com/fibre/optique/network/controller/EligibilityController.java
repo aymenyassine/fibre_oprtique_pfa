@@ -1,6 +1,7 @@
 package com.fibre.optique.network.controller;
 
 import com.fibre.optique.network.dto.EligibilityResponse;
+import com.fibre.optique.network.dto.IncidentStatsDto;
 import com.fibre.optique.network.dto.NetworkStatusResponse;
 import com.fibre.optique.network.service.NetworkService;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/network")
@@ -41,5 +43,15 @@ public class EligibilityController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIEN', 'COMMERCIAL')")
     public ResponseEntity<NetworkStatusResponse> getNetworkStatus() {
         return ResponseEntity.ok(networkService.getNetworkStatus());
+    }
+
+    /**
+     * Returns daily incident statistics (new incidents and resolutions) for the last N days.
+     */
+    @GetMapping("/stats/incidents")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIEN', 'COMMERCIAL')")
+    public ResponseEntity<List<IncidentStatsDto>> getIncidentStats(
+            @RequestParam(defaultValue = "7") int days) {
+        return ResponseEntity.ok(networkService.getIncidentStats(days));
     }
 }
