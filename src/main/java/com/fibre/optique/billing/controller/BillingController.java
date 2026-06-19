@@ -104,7 +104,7 @@ public class BillingController {
         byte[] pdfBytes = billingService.downloadInvoicePdf(id);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
                 ContentDisposition.attachment()
                         .filename(dto.getReference() + ".pdf")

@@ -1,6 +1,12 @@
 package com.fibre.optique.subscription.service;
 
 import com.fibre.optique.subscription.entity.Abonnement;
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,12 +22,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Generates a contract PDF for a given subscription.
- *
- * <p>In development, this writes a plain-text file (.pdf extension) so no external
- * PDF library is required for the project to compile and run.
- * Replace the body of {@link #generate} with iText / OpenPDF calls when a real
- * PDF is needed for production.</p>
+ * Generates a contract PDF for a given subscription using OpenPDF.
  */
 @Service
 public class ContractPdfService {
@@ -51,9 +51,25 @@ public class ContractPdfService {
 
         Path filePath = dir.resolve(fileName);
 
-        try (OutputStream out = new FileOutputStream(filePath.toFile())) {
+        Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+        try {
+            PdfWriter.getInstance(document, new FileOutputStream(filePath.toFile()));
+            document.open();
+            Font monoFont = FontFactory.getFont(FontFactory.COURIER, 10);
+
             String content = buildContractText(abonnement);
-            out.write(content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            for (String line : content.split("\n")) {
+                Paragraph p = new Paragraph(line, monoFont);
+                p.setLeading(14f);
+                document.add(p);
+            }
+        } catch (Exception e) {
+            log.error("PDF generation failed for subscription contract {}: {}", abonnement.getId(), e.getMessage());
+            throw new IOException("Failed to generate PDF", e);
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
         }
 
         log.info("Contract PDF generated: {}", filePath.toAbsolutePath());
@@ -75,32 +91,32 @@ public class ContractPdfService {
                            CONTRAT D'ABONNEMENT FIBRE OPTIQUE
                 ============================================================
 
-                Numéro d'abonnement : %d
+                Numero d'abonnement : %d
                 Date de signature   : %s
 
-                ── CLIENT ──────────────────────────────────────────────────
-                Nom & Prénom : %s %s
+                --- CLIENT -------------------------------------------------
+                Nom & Prenom : %s %s
                 Email        : %s
 
-                ── OFFRE ───────────────────────────────────────────────────
+                --- OFFRE --------------------------------------------------
                 Offre        : %s
                 Technologie  : %s
-                Débit down   : %d Mbps
-                Débit up     : %d Mbps
+                Debit down   : %d Mbps
+                Debit up     : %d Mbps
                 Engagement   : %s (%d mois)
-                Prix HT      : %.2f €
+                Prix HT      : %.2f EUR
                 TVA          : %.2f %%
-                Prix TTC     : %.2f €
+                Prix TTC     : %.2f EUR
 
-                ── DURÉE ───────────────────────────────────────────────────
-                Date de début : %s
+                --- DUREE --------------------------------------------------
+                Date de debut : %s
                 Date de fin   : %s
 
-                ── SIGNATURE ───────────────────────────────────────────────
-                Lu et approuvé par le client.
+                --- SIGNATURE ----------------------------------------------
+                Lu et approuve par le client.
 
                 ____________________________________________________________
-                Fibre Optique Platform  —  Document généré automatiquement
+                Fibre Optique Platform  -  Document genere automatiquement
                 ============================================================
                 """.formatted(
                 a.getId(),
@@ -116,7 +132,7 @@ public class ContractPdfService {
                 tva,
                 prixTTC,
                 a.getDateDebut().format(DATE_FMT),
-                a.getDateFin() != null ? a.getDateFin().format(DATE_FMT) : "Indéterminée"
+                a.getDateFin() != null ? a.getDateFin().format(DATE_FMT) : "Indeterminee"
         );
     }
 }

@@ -301,9 +301,6 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ContratNotFoundException(abonnementId));
     }
 
-    /**
-     * Returns the raw contract file bytes for download.
-     */
     public byte[] downloadContrat(Long abonnementId) throws IOException {
         Contrat contrat = contratRepository.findByAbonnementId(abonnementId)
                 .orElseThrow(() -> new ContratNotFoundException(abonnementId));
@@ -312,6 +309,10 @@ public class SubscriptionService {
         if (!java.nio.file.Files.exists(filePath)) {
             // Try resolving relative to working directory
             filePath = java.nio.file.Paths.get(".").resolve(contrat.getPdfStorageKey());
+        }
+        if (!java.nio.file.Files.exists(filePath)) {
+            // Try resolving relative to data directory
+            filePath = java.nio.file.Paths.get("./data").resolve(contrat.getPdfStorageKey());
         }
 
         return java.nio.file.Files.readAllBytes(filePath);

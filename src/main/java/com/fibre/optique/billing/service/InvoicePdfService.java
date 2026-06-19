@@ -1,6 +1,12 @@
 package com.fibre.optique.billing.service;
 
 import com.fibre.optique.billing.entity.Facture;
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,18 +14,13 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Generates invoice PDF files.
- *
- * <p>Currently writes a plain-text representation (no external library required).
- * Replace {@link #buildInvoiceText} body with iText / OpenPDF calls for production.</p>
+ * Generates invoice PDF files using OpenPDF.
  */
 @Service
 public class InvoicePdfService {
@@ -43,8 +44,25 @@ public class InvoicePdfService {
         String fileName = facture.getReference() + ".pdf";
         Path filePath = dir.resolve(fileName);
 
-        try (OutputStream out = new FileOutputStream(filePath.toFile())) {
-            out.write(buildInvoiceText(facture).getBytes(StandardCharsets.UTF_8));
+        Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+        try {
+            PdfWriter.getInstance(document, new FileOutputStream(filePath.toFile()));
+            document.open();
+            Font monoFont = FontFactory.getFont(FontFactory.COURIER, 10);
+
+            String text = buildInvoiceText(facture);
+            for (String line : text.split("\n")) {
+                Paragraph p = new Paragraph(line, monoFont);
+                p.setLeading(14f);
+                document.add(p);
+            }
+        } catch (Exception e) {
+            log.error("PDF generation failed for invoice {}: {}", facture.getReference(), e.getMessage());
+            throw new IOException("Failed to generate PDF", e);
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
         }
 
         log.info("Invoice PDF generated: {}", filePath.toAbsolutePath());
@@ -59,6 +77,9 @@ public class InvoicePdfService {
         if (!Files.exists(filePath)) {
             filePath = Paths.get(".").resolve(pdfStorageKey);
         }
+        if (!Files.exists(filePath)) {
+            filePath = Paths.get("./data").resolve(pdfStorageKey);
+        }
         return Files.readAllBytes(filePath);
     }
 
@@ -70,26 +91,26 @@ public class InvoicePdfService {
                                       FACTURE
                 ============================================================
 
-                Référence    : %s
-                Date émission: %s
-                Date échéance: %s
+                Reference    : %s
+                Date emission: %s
+                Date echeance: %s
                 Statut       : %s
 
-                ── CLIENT ──────────────────────────────────────────────────
-                Nom & Prénom : %s
+                --- CLIENT -------------------------------------------------
+                Nom & Prenom : %s
                 Email        : %s
 
-                ── ABONNEMENT ──────────────────────────────────────────────
+                --- ABONNEMENT ---------------------------------------------
                 Offre        : %s
 
-                ── MONTANTS ────────────────────────────────────────────────
-                Montant HT   : %.2f €
-                Montant TTC  : %.2f €
+                --- MONTANTS -----------------------------------------------
+                Montant HT   : %.2f EUR
+                Montant TTC  : %.2f EUR
 
-                ── PAIEMENT ────────────────────────────────────────────────
-                Veuillez régler avant le %s.
+                --- PAIEMENT -----------------------------------------------
+                Veuillez regler avant le %s.
                 ____________________________________________________________
-                Fibre Optique Platform  —  Document généré automatiquement
+                Fibre Optique Platform  -  Document genere automatiquement
                 ============================================================
                 """.formatted(
                 f.getReference(),

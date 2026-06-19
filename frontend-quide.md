@@ -104,7 +104,7 @@ Voici une documentation complète au format Markdown pour les endpoints de l'API
 
 **Query Parameters:**
 - `technologie` (optional): `FTTH`, `FTTB`
-- `typeEngagement` (optional): `SANS_ENGAGEMENT`, `MOIS_12`, `MOIS_24`
+- `typeEngagement` (optional): `SANS_ENGAGEMENT`, `DOUZE_MOIS`, `VINGT_QUATRE_MOIS`
 
 **Response (200 OK):**
 ```tson
@@ -1117,8 +1117,8 @@ Voici une documentation complète au format Markdown pour les endpoints de l'API
 
 ### TypeEngagement
 - `SANS_ENGAGEMENT`
-- `MOIS_12`
-- `MOIS_24`
+- `DOUZE_MOIS`
+- `VINGT_QUATRE_MOIS`
 
 ### Technologie
 - `FTTH`
@@ -1407,8 +1407,8 @@ Voici une documentation complète au format Markdown pour les endpoints de l'API
 
 ### TypeEngagement
 - `SANS_ENGAGEMENT` - No commitment
-- `MOIS_12` - 12 months commitment
-- `MOIS_24` - 24 months commitment
+- `DOUZE_MOIS` - 12 months commitment
+- `VINGT_QUATRE_MOIS` - 24 months commitment
 
 ### Technologie
 - `FTTH` - Fiber to the Home

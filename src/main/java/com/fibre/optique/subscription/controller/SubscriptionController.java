@@ -145,7 +145,7 @@ public class SubscriptionController {
         byte[] pdfBytes = subscriptionService.downloadContrat(id);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(
                 ContentDisposition.attachment()
                         .filename("contrat-abonnement-" + id + ".pdf")
