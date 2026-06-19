@@ -16,6 +16,10 @@ public class TicketRequest {
     @NotBlank(message = "La description est obligatoire")
     private String description;
 
+    @NotBlank(message = "La catégorie est obligatoire")
+    @Size(max = 50, message = "La catégorie ne peut pas dépasser 50 caractères")
+    private String categorie;
+
     @NotNull(message = "La priorité est obligatoire")
     private TicketPriority priorite;
 

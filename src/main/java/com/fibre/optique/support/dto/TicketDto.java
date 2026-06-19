@@ -18,6 +18,7 @@ public class TicketDto {
     private String clientEmail;
     private String titre;
     private String description;
+    private String categorie;
     private TicketStatus statut;
     private TicketPriority priorite;
     private Instant dateCreation;
@@ -34,6 +35,7 @@ public class TicketDto {
                 .clientEmail(t.getClient().getEmail())
                 .titre(t.getTitre())
                 .description(t.getDescription())
+                .categorie(t.getCategorie())
                 .statut(t.getStatut())
                 .priorite(t.getPriorite())
                 .dateCreation(t.getDateCreation())

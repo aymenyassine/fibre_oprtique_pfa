@@ -132,16 +132,15 @@ public class SubscriptionService {
 
         // 2. Compute end date from engagement duration
         LocalDate dateDebut = LocalDate.now();
-        LocalDate dateFin = offre.getDureeMois() > 0
-                ? dateDebut.plusMonths(offre.getDureeMois())
-                : null;
+
+
 
         // 3. Persist subscription
         Abonnement abonnement = Abonnement.builder()
                 .client(client)
                 .offre(offre)
                 .dateDebut(dateDebut)
-                .dateFin(dateFin)
+                .dateFin(Abonnement.calculateEndDateFromOffer(offre, dateDebut))
                 .statut(AbonnementStatus.ACTIF)
                 .build();
 

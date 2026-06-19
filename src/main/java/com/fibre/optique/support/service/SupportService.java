@@ -100,6 +100,7 @@ public class SupportService {
                 .client(client)
                 .titre(request.getTitre())
                 .description(request.getDescription())
+                .categorie(request.getCategorie())
                 .statut(TicketStatus.OUVERT)
                 .priorite(request.getPriorite())
                 .dateLimiteSla(slaDeadline)

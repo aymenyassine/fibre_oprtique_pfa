@@ -88,8 +88,8 @@ public class RequestService {
             eligibility = networkService.checkEligibility(
                     request.getLongitude(), request.getLatitude());
             initialStatus = eligibility.isEligible()
-                    ? DemandeStatus.ELIGIBILITE_VERIFIEE
-                    : DemandeStatus.REJETE;
+                    ? DemandeStatus.EN_ANALYSE
+                    : DemandeStatus.REJETEE;
         } else {
             // No coordinates → save as SOUMISE for manual review by commercial
             eligibility = EligibilityResponse.builder()
@@ -130,17 +130,17 @@ public class RequestService {
     public DemandeRaccordementDto setDevis(Long id, DevisRequest request) {
         DemandeRaccordement demande = load(id);
 
-        // Accept both SOUMISE (manual review) and ELIGIBILITE_VERIFIEE (auto-checked)
-        if (demande.getStatut() != DemandeStatus.ELIGIBILITE_VERIFIEE
+        // Accept both SOUMISE (manual review) and EN_ANALYSE (auto-checked)
+        if (demande.getStatut() != DemandeStatus.EN_ANALYSE
                 && demande.getStatut() != DemandeStatus.SOUMISE) {
             throw new DemandeValidationException(
-                    "Le devis ne peut être généré que pour une demande SOUMISE ou avec éligibilité vérifiée."
+                    "Le devis ne peut être généré que pour une demande SOUMISE ou en analyse."
                     + " Statut actuel : " + demande.getStatut());
         }
 
         demande.setMontantDevis(request.getMontantDevis());
         demande.setOffreIdChoisie(request.getOffreId());
-        demande.setStatut(DemandeStatus.DEVIS_GENERE);
+        demande.setStatut(DemandeStatus.DEVIS_ENVOYE);
 
         return DemandeRaccordementDto.fromEntity(demandeRepository.save(demande));
     }
@@ -153,10 +153,10 @@ public class RequestService {
     public DemandeRaccordementDto acceptDevis(Long id) {
         DemandeRaccordement demande = load(id);
 
-        requireStatus(demande, DemandeStatus.DEVIS_GENERE,
-                "Seule une demande avec un devis généré peut être acceptée.");
+        requireStatus(demande, DemandeStatus.DEVIS_ENVOYE,
+                "Seule une demande avec un devis envoyé peut être acceptée.");
 
-        demande.setStatut(DemandeStatus.ACCEPTE);
+        demande.setStatut(DemandeStatus.ACCEPTEE);
         return DemandeRaccordementDto.fromEntity(demandeRepository.save(demande));
     }
 
@@ -168,7 +168,7 @@ public class RequestService {
     public DemandeRaccordementDto schedule(Long id, ScheduleRequest request) {
         DemandeRaccordement demande = load(id);
 
-        requireStatus(demande, DemandeStatus.ACCEPTE,
+        requireStatus(demande, DemandeStatus.ACCEPTEE,
                 "Une demande doit être acceptée avant d'être planifiée.");
 
         User technicien = userService.findById(request.getTechnicienId())
@@ -182,7 +182,7 @@ public class RequestService {
 
         demande.setTechnicien(technicien);
         demande.setDatePlanification(request.getDatePlanification());
-        demande.setStatut(DemandeStatus.PLANIFIE);
+        demande.setStatut(DemandeStatus.PLANIFIEE);
 
         return DemandeRaccordementDto.fromEntity(demandeRepository.save(demande));
     }
@@ -201,49 +201,93 @@ public class RequestService {
      *   <li>Publishes {@link DemandeCompletedEvent} for email notification.</li>
      * </ol>
      */
-    @Transactional
-    public DemandeRaccordementDto complete(Long id) {
-        DemandeRaccordement demande = load(id);
+    // RequestService.java
 
-        requireStatus(demande, DemandeStatus.PLANIFIE,
-                "Seule une demande planifiée peut être complétée.");
-
-        if (demande.getOffreIdChoisie() == null) {
-            throw new DemandeValidationException(
-                    "Aucune offre n'a été sélectionnée pour cette demande. Veuillez d'abord générer un devis.");
-        }
-
-        // 1. Create CLIENT user account
-        UserDto newClient = provisionClientAccount(demande);
-
-        // 2. Create subscription
-        SubscriptionRequest subRequest = new SubscriptionRequest();
-        subRequest.setClientId(newClient.getId());
-        subRequest.setOffreId(demande.getOffreIdChoisie());
-
-        try {
-            subscriptionService.createSubscription(subRequest);
-        } catch (Exception e) {
-            // Log and continue — subscription failure should not block completion
-            log.error("Auto-subscription failed for demande {}: {}", id, e.getMessage(), e);
-        }
-
-        // 3. Update demande
-        demande.setStatut(DemandeStatus.TERMINE);
-        demande.setClientCreatedId(newClient.getId());
-        demande = demandeRepository.save(demande);
-
-        // 4. Notify (async)
-        eventPublisher.publishEvent(new DemandeCompletedEvent(
-                this,
-                demande.getId(),
-                demande.getProspectEmail(),
-                demande.getProspectNom() + " " + demande.getProspectPrenom()
-        ));
-
-        return DemandeRaccordementDto.fromEntity(demande);
+@Transactional
+public DemandeRaccordementDto complete(Long id) {
+    DemandeRaccordement demande = load(id);
+    
+    requireStatus(demande, DemandeStatus.PLANIFIEE,
+            "Seule une demande planifiée peut être complétée.");
+    
+    if (demande.getOffreIdChoisie() == null) {
+        throw new DemandeValidationException(
+                "Aucune offre n'a été sélectionnée pour cette demande.");
     }
+    
+    // 1. Récupérer ou créer l'utilisateur (en PROSPECT)
+    User user = getOrCreateProspect(demande);
+    
+    // 2. Créer l'abonnement
+    SubscriptionRequest subRequest = new SubscriptionRequest();
+    subRequest.setClientId(user.getId());
+    subRequest.setOffreId(demande.getOffreIdChoisie());
+    subscriptionService.createSubscription(subRequest);
+    
+    // 3. ✅ CHANGER LE RÔLE DIRECTEMENT
+    if (user.getRole() == Role.PROSPECT) {
+        user.setRole(Role.CLIENT);
+        userService.save(user);
+        log.info("🔄 Rôle changé: PROSPECT → CLIENT pour {} (ID: {})", 
+            user.getEmail(), user.getId());
+    }
+    
+    // 4. Mettre à jour la demande
+    demande.setStatut(DemandeStatus.TERMINE);
+    demande.setClientCreatedId(user.getId());
+    demande = demandeRepository.save(demande);
+    
+    // 5. Notifications
+    eventPublisher.publishEvent(new DemandeCompletedEvent(
+            this,
+            demande.getId(),
+            demande.getProspectEmail(),
+            demande.getProspectNom() + " " + demande.getProspectPrenom()
+    ));
+    
+    return DemandeRaccordementDto.fromEntity(demande);
+}
 
+/**
+ * ✅ Récupère ou crée l'utilisateur en tant que PROSPECT
+ */
+@Transactional
+private User getOrCreateProspect(DemandeRaccordement demande) {
+    // Vérifier si l'utilisateur existe déjà
+    return userService.findByEmail(demande.getProspectEmail())
+        .map(existingUser -> {
+            // Si déjà CLIENT → on garde (cas d'un 2ème raccordement)
+            if (existingUser.getRole() == Role.CLIENT) {
+                log.info("👤 Utilisateur déjà CLIENT, réutilisation ID: {}", existingUser.getId());
+                return existingUser;
+            }
+            
+            // Si PROSPECT → on réutilise
+            if (existingUser.getRole() == Role.PROSPECT) {
+                log.info("👤 Utilisateur PROSPECT existant, réutilisation ID: {}", existingUser.getId());
+                return existingUser;
+            }
+            
+            // Autre rôle (ADMIN, etc.) → on garde
+            log.info("👤 Utilisateur avec rôle {} trouvé, réutilisation", existingUser.getRole());
+            return existingUser;
+        })
+        .orElseGet(() -> {
+            // ✅ CRÉER NOUVEL UTILISATEUR EN PROSPECT
+            UserCreateRequest userRequest = new UserCreateRequest();
+            userRequest.setNom(demande.getProspectNom());
+            userRequest.setPrenom(demande.getProspectPrenom());
+            userRequest.setEmail(demande.getProspectEmail());
+            userRequest.setPassword(UUID.randomUUID().toString());
+            userRequest.setRole(Role.PROSPECT); // ← Créé en PROSPECT
+            UserDto newUser = userService.createUser(userRequest);
+            
+            log.info("✅ Nouveau PROSPECT créé: {}", newUser.getEmail());
+            
+            return userService.findById(newUser.getId())
+                .orElseThrow(() -> new DemandeValidationException("Erreur création utilisateur"));
+        });
+}
     // =========================================================================
     // REJECT — ADMIN can reject at any point before TERMINE
     // =========================================================================
@@ -256,7 +300,7 @@ public class RequestService {
             throw new DemandeValidationException("Une demande terminée ne peut pas être rejetée.");
         }
 
-        demande.setStatut(DemandeStatus.REJETE);
+        demande.setStatut(DemandeStatus.REJETEE);
         return DemandeRaccordementDto.fromEntity(demandeRepository.save(demande));
     }
 

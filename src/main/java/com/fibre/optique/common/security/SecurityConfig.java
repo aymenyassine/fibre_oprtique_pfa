@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET,  "/api/v1/offers").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET,  "/api/v1/offers/{id}").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET,  "/api/v1/offers/{id}/summary").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET,  "/api/v1/network/eligibility").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

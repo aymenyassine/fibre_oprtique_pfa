@@ -2,10 +2,10 @@ package com.fibre.optique.request.entity;
 
 public enum DemandeStatus {
     SOUMISE,
-    ELIGIBILITE_VERIFIEE,
-    DEVIS_GENERE,
-    ACCEPTE,
-    PLANIFIE,
+    EN_ANALYSE,
+    DEVIS_ENVOYE,
+    ACCEPTEE,
+    PLANIFIEE,
     TERMINE,
-    REJETE
+    REJETEE
 }

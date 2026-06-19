@@ -49,4 +49,30 @@ public class Abonnement {
     @Column(nullable = false)
     @Builder.Default
     private Long version = 0L;
+
+
+    public static LocalDate calculateEndDateFromOffer(Offre offre, LocalDate dateDebut) {
+        if (offre == null || offre.getTypeEngagement() == null) {
+            return dateDebut.plusMonths(1);
+        }
+        
+        return switch (offre.getTypeEngagement()) {
+            case SANS_ENGAGEMENT -> dateDebut.plusMonths(1);
+            case DOUZE_MOIS -> dateDebut.plusMonths(12);
+            case VINGT_QUATRE_MOIS -> dateDebut.plusMonths(24);
+            default -> dateDebut.plusMonths(1);
+        };
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void calculateDateFin() {
+        if (dateDebut == null) {
+            dateDebut = LocalDate.now();
+        }
+        
+        if (statut == AbonnementStatus.ACTIF && dateFin == null) {
+            dateFin = Abonnement.calculateEndDateFromOffer(offre, dateDebut);
+        }
+    }
 }
