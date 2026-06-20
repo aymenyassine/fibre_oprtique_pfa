@@ -370,9 +370,17 @@ public class NetworkService {
 
     @Transactional
     public CheminFibreDto createCheminFibre(CheminFibreRequest request) {
+        // Resolve source and destination IDs
+        Long sourceId = resolveNodeId(request.getSourceNodeId(), request.getSourceNodeType(), request.getSourceNodeName(), "source");
+        Long destId = resolveNodeId(request.getDestNodeId(), request.getDestNodeType(), request.getDestNodeName(), "destination");
+
+        if (sourceId.equals(destId)) {
+            throw new NetworkValidationException("Le nœud source et le nœud destination ne peuvent pas être identiques.");
+        }
+
         CheminFibre cf = CheminFibre.builder()
-                .sourceNodeId(request.getSourceNodeId())
-                .destNodeId(request.getDestNodeId())
+                .sourceNodeId(sourceId)
+                .destNodeId(destId)
                 .longueur(request.getLongueur())
                 .typeFibre(request.getTypeFibre())
                 .statut(request.getStatut())
@@ -385,12 +393,82 @@ public class NetworkService {
         CheminFibre cf = cheminFibreRepository.findById(id)
                 .orElseThrow(() -> new NetworkResourceNotFoundException("CheminFibre", id));
 
-        cf.setSourceNodeId(request.getSourceNodeId());
-        cf.setDestNodeId(request.getDestNodeId());
+        // Resolve source and destination IDs
+        Long sourceId = resolveNodeId(request.getSourceNodeId(), request.getSourceNodeType(), request.getSourceNodeName(), "source");
+        Long destId = resolveNodeId(request.getDestNodeId(), request.getDestNodeType(), request.getDestNodeName(), "destination");
+
+        if (sourceId.equals(destId)) {
+            throw new NetworkValidationException("Le nœud source et le nœud destination ne peuvent pas être identiques.");
+        }
+
+        cf.setSourceNodeId(sourceId);
+        cf.setDestNodeId(destId);
         cf.setLongueur(request.getLongueur());
         cf.setTypeFibre(request.getTypeFibre());
         cf.setStatut(request.getStatut());
         return CheminFibreDto.fromEntity(cheminFibreRepository.save(cf));
+    }
+
+    /**
+     * Resolves a node ID from either:
+     * 1. Direct ID (if provided)
+     * 2. Type + Name lookup (if provided)
+     * 
+     * @param directId Direct node ID (optional)
+     * @param nodeType Type of node: DATACENTER, REPARTITEUR, SPLITTER, BOITE_CLIENT, EQUIPEMENT
+     * @param nodeName Name of the node to lookup
+     * @param fieldName "source" or "destination" for error messages
+     * @return Resolved node ID
+     * @throws NetworkValidationException if resolution fails
+     */
+    private Long resolveNodeId(Long directId, String nodeType, String nodeName, String fieldName) {
+        // Option 1: Direct ID provided
+        if (directId != null) {
+            return directId;
+        }
+
+        // Option 2: Type + Name provided
+        if (nodeType != null && nodeName != null) {
+            return switch (nodeType.toUpperCase()) {
+                case "DATACENTER" -> datacenterRepository.findByNomIgnoreCase(nodeName)
+                        .map(Datacenter::getId)
+                        .orElseThrow(() -> new NetworkValidationException(
+                                "Datacenter non trouvé pour le nœud " + fieldName + " : " + nodeName));
+                
+                case "REPARTITEUR" -> repartiteurRepository.findByNomIgnoreCase(nodeName)
+                        .map(Repartiteur::getId)
+                        .orElseThrow(() -> new NetworkValidationException(
+                                "Répartiteur non trouvé pour le nœud " + fieldName + " : " + nodeName));
+                
+                case "SPLITTER" -> {
+                    // Splitters don't have unique names, so we use ratio as identifier
+                    List<Splitter> splitters = splitterRepository.findByRatio(nodeName);
+                    if (splitters.isEmpty()) {
+                        throw new NetworkValidationException(
+                                "Splitter non trouvé pour le nœud " + fieldName + " avec ratio : " + nodeName);
+                    }
+                    yield splitters.get(0).getId(); // Take first match
+                }
+                
+                case "BOITE_CLIENT" -> boiteClientRepository.findByNom(nodeName)
+                        .map(BoiteClient::getId)
+                        .orElseThrow(() -> new NetworkValidationException(
+                                "Boîte client non trouvée pour le nœud " + fieldName + " : " + nodeName));
+                
+                case "EQUIPEMENT" -> equipementRepository.findByNom(nodeName)
+                        .map(Equipement::getId)
+                        .orElseThrow(() -> new NetworkValidationException(
+                                "Équipement non trouvé pour le nœud " + fieldName + " : " + nodeName));
+                
+                default -> throw new NetworkValidationException(
+                        "Type de nœud invalide pour " + fieldName + " : " + nodeType + 
+                        ". Valeurs autorisées : DATACENTER, REPARTITEUR, SPLITTER, BOITE_CLIENT, EQUIPEMENT");
+            };
+        }
+
+        // Neither option provided
+        throw new NetworkValidationException(
+                "Le nœud " + fieldName + " doit être spécifié soit par ID direct, soit par type + nom.");
     }
 
     @Transactional

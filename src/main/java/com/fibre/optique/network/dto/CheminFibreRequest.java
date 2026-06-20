@@ -8,11 +8,16 @@ import lombok.Data;
 @Data
 public class CheminFibreRequest {
 
-    @NotNull(message = "L'identifiant du nœud source est obligatoire")
+    // Option 1: Direct IDs (legacy support)
     private Long sourceNodeId;
-
-    @NotNull(message = "L'identifiant du nœud destination est obligatoire")
     private Long destNodeId;
+
+    // Option 2: Type + Name (NEW - more user-friendly)
+    private String sourceNodeType;  // "DATACENTER", "REPARTITEUR", "SPLITTER", "BOITE_CLIENT", "EQUIPEMENT"
+    private String sourceNodeName;
+    
+    private String destNodeType;
+    private String destNodeName;
 
     @NotNull(message = "La longueur est obligatoire")
     @DecimalMin(value = "0.001", message = "La longueur doit être positive")

@@ -8,4 +8,6 @@ import java.util.List;
 public interface SplitterRepository extends JpaRepository<Splitter, Long> {
 
     List<Splitter> findByRepartiteurId(Long repartiteurId);
+    
+    List<Splitter> findByRatio(String ratio);
 }

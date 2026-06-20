@@ -13,6 +13,8 @@ public interface BoiteClientRepository extends JpaRepository<BoiteClient, Long> 
     List<BoiteClient> findBySplitterId(Long splitterId);
 
     boolean existsByNom(String nom);
+    
+    Optional<BoiteClient> findByNom(String nom);
 
     @Query("SELECT bc FROM BoiteClient bc WHERE bc.portsUtilises < bc.nbPorts")
     List<BoiteClient> findAvailableBoxes();
