@@ -6,14 +6,13 @@ import com.fibre.optique.network.exception.NetworkResourceNotFoundException;
 import com.fibre.optique.network.exception.NetworkValidationException;
 import com.fibre.optique.network.repository.*;
 import com.fibre.optique.support.repository.TicketRepository;
+import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -28,31 +27,35 @@ public class NetworkService {
      */
     static final double MAX_ELIGIBILITY_DISTANCE_METRES = 500.0;
 
-    private final GeometryFactory geometryFactory =
-            new GeometryFactory(new PrecisionModel(), SRID);
+    private final GeometryFactory geometryFactory = new GeometryFactory(
+        new PrecisionModel(),
+        SRID
+    );
 
-    private final DatacenterRepository    datacenterRepository;
-    private final RepartiteurRepository   repartiteurRepository;
-    private final SplitterRepository      splitterRepository;
-    private final BoiteClientRepository   boiteClientRepository;
-    private final EquipementRepository    equipementRepository;
-    private final CheminFibreRepository   cheminFibreRepository;
-    private final TicketRepository        ticketRepository;
+    private final DatacenterRepository datacenterRepository;
+    private final RepartiteurRepository repartiteurRepository;
+    private final SplitterRepository splitterRepository;
+    private final BoiteClientRepository boiteClientRepository;
+    private final EquipementRepository equipementRepository;
+    private final CheminFibreRepository cheminFibreRepository;
+    private final TicketRepository ticketRepository;
 
-    public NetworkService(DatacenterRepository datacenterRepository,
-                          RepartiteurRepository repartiteurRepository,
-                          SplitterRepository splitterRepository,
-                          BoiteClientRepository boiteClientRepository,
-                          EquipementRepository equipementRepository,
-                          CheminFibreRepository cheminFibreRepository,
-                          TicketRepository ticketRepository) {
-        this.datacenterRepository  = datacenterRepository;
+    public NetworkService(
+        DatacenterRepository datacenterRepository,
+        RepartiteurRepository repartiteurRepository,
+        SplitterRepository splitterRepository,
+        BoiteClientRepository boiteClientRepository,
+        EquipementRepository equipementRepository,
+        CheminFibreRepository cheminFibreRepository,
+        TicketRepository ticketRepository
+    ) {
+        this.datacenterRepository = datacenterRepository;
         this.repartiteurRepository = repartiteurRepository;
-        this.splitterRepository    = splitterRepository;
+        this.splitterRepository = splitterRepository;
         this.boiteClientRepository = boiteClientRepository;
-        this.equipementRepository  = equipementRepository;
+        this.equipementRepository = equipementRepository;
         this.cheminFibreRepository = cheminFibreRepository;
-        this.ticketRepository      = ticketRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     // =========================================================================
@@ -60,37 +63,51 @@ public class NetworkService {
     // =========================================================================
 
     public List<DatacenterDto> getAllDatacenters() {
-        return datacenterRepository.findAll().stream()
-                .map(DatacenterDto::fromEntity).toList();
+        return datacenterRepository
+            .findAll()
+            .stream()
+            .map(DatacenterDto::fromEntity)
+            .toList();
     }
 
     public DatacenterDto getDatacenterById(Long id) {
-        return datacenterRepository.findById(id)
-                .map(DatacenterDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Datacenter", id));
+        return datacenterRepository
+            .findById(id)
+            .map(DatacenterDto::fromEntity)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Datacenter", id)
+            );
     }
 
     @Transactional
     public DatacenterDto createDatacenter(DatacenterRequest request) {
         if (datacenterRepository.existsByNomIgnoreCase(request.getNom())) {
             throw new NetworkValidationException(
-                    "Un datacenter avec ce nom existe déjà : " + request.getNom());
+                "Un datacenter avec ce nom existe déjà : " + request.getNom()
+            );
         }
         Datacenter dc = Datacenter.builder()
-                .nom(request.getNom())
-                .capacite(request.getCapacite())
-                .coordinate(buildPoint(request.getLongitude(), request.getLatitude()))
-                .build();
+            .nom(request.getNom())
+            .capacite(request.getCapacite())
+            .coordinate(
+                buildPoint(request.getLongitude(), request.getLatitude())
+            )
+            .build();
         return DatacenterDto.fromEntity(datacenterRepository.save(dc));
     }
 
     @Transactional
     public DatacenterDto updateDatacenter(Long id, DatacenterRequest request) {
-        Datacenter dc = datacenterRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Datacenter", id));
+        Datacenter dc = datacenterRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Datacenter", id)
+            );
         dc.setNom(request.getNom());
         dc.setCapacite(request.getCapacite());
-        dc.setCoordinate(buildPoint(request.getLongitude(), request.getLatitude()));
+        dc.setCoordinate(
+            buildPoint(request.getLongitude(), request.getLatitude())
+        );
         return DatacenterDto.fromEntity(datacenterRepository.save(dc));
     }
 
@@ -107,48 +124,75 @@ public class NetworkService {
     // =========================================================================
 
     public List<RepartiteurDto> getAllRepartiteurs() {
-        return repartiteurRepository.findAll().stream()
-                .map(RepartiteurDto::fromEntity).toList();
+        return repartiteurRepository
+            .findAll()
+            .stream()
+            .map(RepartiteurDto::fromEntity)
+            .toList();
     }
 
     public RepartiteurDto getRepartiteurById(Long id) {
-        return repartiteurRepository.findById(id)
-                .map(RepartiteurDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Répartiteur", id));
+        return repartiteurRepository
+            .findById(id)
+            .map(RepartiteurDto::fromEntity)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Répartiteur", id)
+            );
     }
 
     @Transactional
     public RepartiteurDto createRepartiteur(RepartiteurRequest request) {
-        Datacenter dc = datacenterRepository.findById(request.getDatacenterId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Datacenter", request.getDatacenterId()));
+        Datacenter dc = datacenterRepository
+            .findById(request.getDatacenterId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Datacenter",
+                    request.getDatacenterId()
+                )
+            );
 
         if (repartiteurRepository.existsByNomIgnoreCase(request.getNom())) {
             throw new NetworkValidationException(
-                    "Un répartiteur avec ce nom existe déjà : " + request.getNom());
+                "Un répartiteur avec ce nom existe déjà : " + request.getNom()
+            );
         }
 
         Repartiteur rep = Repartiteur.builder()
-                .nom(request.getNom())
-                .nbPorts(request.getNbPorts())
-                .coordinate(buildPoint(request.getLongitude(), request.getLatitude()))
-                .datacenter(dc)
-                .build();
+            .nom(request.getNom())
+            .nbPorts(request.getNbPorts())
+            .coordinate(
+                buildPoint(request.getLongitude(), request.getLatitude())
+            )
+            .datacenter(dc)
+            .build();
         return RepartiteurDto.fromEntity(repartiteurRepository.save(rep));
     }
 
     @Transactional
-    public RepartiteurDto updateRepartiteur(Long id, RepartiteurRequest request) {
-        Repartiteur rep = repartiteurRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Répartiteur", id));
+    public RepartiteurDto updateRepartiteur(
+        Long id,
+        RepartiteurRequest request
+    ) {
+        Repartiteur rep = repartiteurRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Répartiteur", id)
+            );
 
-        Datacenter dc = datacenterRepository.findById(request.getDatacenterId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Datacenter", request.getDatacenterId()));
+        Datacenter dc = datacenterRepository
+            .findById(request.getDatacenterId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Datacenter",
+                    request.getDatacenterId()
+                )
+            );
 
         rep.setNom(request.getNom());
         rep.setNbPorts(request.getNbPorts());
-        rep.setCoordinate(buildPoint(request.getLongitude(), request.getLatitude()));
+        rep.setCoordinate(
+            buildPoint(request.getLongitude(), request.getLatitude())
+        );
         rep.setDatacenter(dc);
         return RepartiteurDto.fromEntity(repartiteurRepository.save(rep));
     }
@@ -166,38 +210,57 @@ public class NetworkService {
     // =========================================================================
 
     public List<SplitterDto> getAllSplitters() {
-        return splitterRepository.findAll().stream()
-                .map(SplitterDto::fromEntity).toList();
+        return splitterRepository
+            .findAll()
+            .stream()
+            .map(SplitterDto::fromEntity)
+            .toList();
     }
 
     public SplitterDto getSplitterById(Long id) {
-        return splitterRepository.findById(id)
-                .map(SplitterDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Splitter", id));
+        return splitterRepository
+            .findById(id)
+            .map(SplitterDto::fromEntity)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Splitter", id)
+            );
     }
 
     @Transactional
     public SplitterDto createSplitter(SplitterRequest request) {
-        Repartiteur rep = repartiteurRepository.findById(request.getRepartiteurId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Répartiteur", request.getRepartiteurId()));
+        Repartiteur rep = repartiteurRepository
+            .findById(request.getRepartiteurId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Répartiteur",
+                    request.getRepartiteurId()
+                )
+            );
 
         Splitter splitter = Splitter.builder()
-                .ratio(request.getRatio())
-                .nbSortie(request.getNbSortie())
-                .repartiteur(rep)
-                .build();
+            .ratio(request.getRatio())
+            .nbSortie(request.getNbSortie())
+            .repartiteur(rep)
+            .build();
         return SplitterDto.fromEntity(splitterRepository.save(splitter));
     }
 
     @Transactional
     public SplitterDto updateSplitter(Long id, SplitterRequest request) {
-        Splitter splitter = splitterRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Splitter", id));
+        Splitter splitter = splitterRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Splitter", id)
+            );
 
-        Repartiteur rep = repartiteurRepository.findById(request.getRepartiteurId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Répartiteur", request.getRepartiteurId()));
+        Repartiteur rep = repartiteurRepository
+            .findById(request.getRepartiteurId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Répartiteur",
+                    request.getRepartiteurId()
+                )
+            );
 
         splitter.setRatio(request.getRatio());
         splitter.setNbSortie(request.getNbSortie());
@@ -218,68 +281,116 @@ public class NetworkService {
     // =========================================================================
 
     public List<BoiteClientDto> getAllBoitesClient() {
-        return boiteClientRepository.findAll().stream()
-                .map(BoiteClientDto::fromEntity).toList();
+        return boiteClientRepository
+            .findAll()
+            .stream()
+            .map(BoiteClientDto::fromEntity)
+            .toList();
     }
 
     public BoiteClientDto getBoiteClientById(Long id) {
-        return boiteClientRepository.findById(id)
-                .map(BoiteClientDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("BoiteClient", id));
+        return boiteClientRepository
+            .findById(id)
+            .map(BoiteClientDto::fromEntity)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("BoiteClient", id)
+            );
     }
 
     @Transactional
     public BoiteClientDto createBoiteClient(BoiteClientRequest request) {
-        Splitter splitter = splitterRepository.findById(request.getSplitterId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Splitter", request.getSplitterId()));
+        Splitter splitter = splitterRepository
+            .findById(request.getSplitterId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Splitter",
+                    request.getSplitterId()
+                )
+            );
 
         if (boiteClientRepository.existsByNom(request.getNom())) {
             throw new NetworkValidationException(
-                    "Une boîte client avec ce nom existe déjà : " + request.getNom());
+                "Une boîte client avec ce nom existe déjà : " + request.getNom()
+            );
         }
 
         BoiteClient bc = BoiteClient.builder()
-                .nom(request.getNom())
-                .nbPorts(request.getNbPorts())
-                .portsUtilises(request.getPortsUtilises() != null ? request.getPortsUtilises() : 0)
-                .coordinate(buildPoint(request.getLongitude(), request.getLatitude()))
-                .splitter(splitter)
-                .build();
+            .nom(request.getNom())
+            .nbPorts(request.getNbPorts())
+            .portsUtilises(
+                request.getPortsUtilises() != null
+                    ? request.getPortsUtilises()
+                    : 0
+            )
+            .coordinate(
+                buildPoint(request.getLongitude(), request.getLatitude())
+            )
+            .splitter(splitter)
+            .build();
         return BoiteClientDto.fromEntity(boiteClientRepository.save(bc));
     }
 
     @Transactional
-    public BoiteClientDto updateBoiteClient(Long id, BoiteClientRequest request) {
-        BoiteClient bc = boiteClientRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("BoiteClient", id));
+    public BoiteClientDto updateBoiteClient(
+        Long id,
+        BoiteClientRequest request
+    ) {
+        BoiteClient bc = boiteClientRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("BoiteClient", id)
+            );
 
-        Splitter splitter = splitterRepository.findById(request.getSplitterId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Splitter", request.getSplitterId()));
+        Splitter splitter = splitterRepository
+            .findById(request.getSplitterId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Splitter",
+                    request.getSplitterId()
+                )
+            );
 
-        if (request.getPortsUtilises() != null && request.getPortsUtilises() > request.getNbPorts()) {
+        if (
+            request.getPortsUtilises() != null &&
+            request.getPortsUtilises() > request.getNbPorts()
+        ) {
             throw new NetworkValidationException(
-                    "Les ports utilisés (" + request.getPortsUtilises() +
-                    ") ne peuvent pas dépasser le nombre total de ports (" + request.getNbPorts() + ").");
+                "Les ports utilisés (" +
+                    request.getPortsUtilises() +
+                    ") ne peuvent pas dépasser le nombre total de ports (" +
+                    request.getNbPorts() +
+                    ")."
+            );
         }
 
         bc.setNom(request.getNom());
         bc.setNbPorts(request.getNbPorts());
-        bc.setPortsUtilises(request.getPortsUtilises() != null ? request.getPortsUtilises() : bc.getPortsUtilises());
-        bc.setCoordinate(buildPoint(request.getLongitude(), request.getLatitude()));
+        bc.setPortsUtilises(
+            request.getPortsUtilises() != null
+                ? request.getPortsUtilises()
+                : bc.getPortsUtilises()
+        );
+        bc.setCoordinate(
+            buildPoint(request.getLongitude(), request.getLatitude())
+        );
         bc.setSplitter(splitter);
         return BoiteClientDto.fromEntity(boiteClientRepository.save(bc));
     }
 
     @Transactional
     public BoiteClientDto incrementPortsUtilises(Long id) {
-        BoiteClient bc = boiteClientRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("BoiteClient", id));
+        BoiteClient bc = boiteClientRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("BoiteClient", id)
+            );
 
         if (bc.getPortsUtilises() >= bc.getNbPorts()) {
             throw new NetworkValidationException(
-                    "La boîte client '" + bc.getNom() + "' est saturée — plus de ports disponibles.");
+                "La boîte client '" +
+                    bc.getNom() +
+                    "' est saturée — plus de ports disponibles."
+            );
         }
         bc.setPortsUtilises(bc.getPortsUtilises() + 1);
         return BoiteClientDto.fromEntity(boiteClientRepository.save(bc));
@@ -298,42 +409,61 @@ public class NetworkService {
     // =========================================================================
 
     public List<EquipementDto> getAllEquipements() {
-        return equipementRepository.findAll().stream()
-                .map(EquipementDto::fromEntity).toList();
+        return equipementRepository
+            .findAll()
+            .stream()
+            .map(EquipementDto::fromEntity)
+            .toList();
     }
 
     public EquipementDto getEquipementById(Long id) {
-        return equipementRepository.findById(id)
-                .map(EquipementDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Équipement", id));
+        return equipementRepository
+            .findById(id)
+            .map(EquipementDto::fromEntity)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Équipement", id)
+            );
     }
 
     @Transactional
     public EquipementDto createEquipement(EquipementRequest request) {
-        Repartiteur rep = repartiteurRepository.findById(request.getRepartiteurId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Répartiteur", request.getRepartiteurId()));
+        Repartiteur rep = repartiteurRepository
+            .findById(request.getRepartiteurId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Répartiteur",
+                    request.getRepartiteurId()
+                )
+            );
 
         Equipement eq = Equipement.builder()
-                .nom(request.getNom())
-                .modele(request.getModele())
-                .numSerie(request.getNumSerie())
-                .ip(request.getIp())
-                .status(request.getStatus())
-                .type(request.getType())
-                .repartiteur(rep)
-                .build();
+            .nom(request.getNom())
+            .modele(request.getModele())
+            .numSerie(request.getNumSerie())
+            .ip(request.getIp())
+            .status(request.getStatus())
+            .type(request.getType())
+            .repartiteur(rep)
+            .build();
         return EquipementDto.fromEntity(equipementRepository.save(eq));
     }
 
     @Transactional
     public EquipementDto updateEquipement(Long id, EquipementRequest request) {
-        Equipement eq = equipementRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("Équipement", id));
+        Equipement eq = equipementRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("Équipement", id)
+            );
 
-        Repartiteur rep = repartiteurRepository.findById(request.getRepartiteurId())
-                .orElseThrow(() -> new NetworkResourceNotFoundException(
-                        "Répartiteur", request.getRepartiteurId()));
+        Repartiteur rep = repartiteurRepository
+            .findById(request.getRepartiteurId())
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException(
+                    "Répartiteur",
+                    request.getRepartiteurId()
+                )
+            );
 
         eq.setNom(request.getNom());
         eq.setModele(request.getModele());
@@ -358,47 +488,83 @@ public class NetworkService {
     // =========================================================================
 
     public List<CheminFibreDto> getAllCheminsFibre() {
-        return cheminFibreRepository.findAll().stream()
-                .map(CheminFibreDto::fromEntity).toList();
+        return cheminFibreRepository
+            .findAll()
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     public CheminFibreDto getCheminFibreById(Long id) {
-        return cheminFibreRepository.findById(id)
-                .map(CheminFibreDto::fromEntity)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("CheminFibre", id));
+        return cheminFibreRepository
+            .findById(id)
+            .map(this::toDto)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("CheminFibre", id)
+            );
     }
 
     @Transactional
     public CheminFibreDto createCheminFibre(CheminFibreRequest request) {
         // Resolve source and destination IDs
-        Long sourceId = resolveNodeId(request.getSourceNodeId(), request.getSourceNodeType(), request.getSourceNodeName(), "source");
-        Long destId = resolveNodeId(request.getDestNodeId(), request.getDestNodeType(), request.getDestNodeName(), "destination");
+        Long sourceId = resolveNodeId(
+            request.getSourceNodeId(),
+            request.getSourceNodeType(),
+            request.getSourceNodeName(),
+            "source"
+        );
+        Long destId = resolveNodeId(
+            request.getDestNodeId(),
+            request.getDestNodeType(),
+            request.getDestNodeName(),
+            "destination"
+        );
 
         if (sourceId.equals(destId)) {
-            throw new NetworkValidationException("Le nœud source et le nœud destination ne peuvent pas être identiques.");
+            throw new NetworkValidationException(
+                "Le nœud source et le nœud destination ne peuvent pas être identiques."
+            );
         }
 
         CheminFibre cf = CheminFibre.builder()
-                .sourceNodeId(sourceId)
-                .destNodeId(destId)
-                .longueur(request.getLongueur())
-                .typeFibre(request.getTypeFibre())
-                .statut(request.getStatut())
-                .build();
-        return CheminFibreDto.fromEntity(cheminFibreRepository.save(cf));
+            .sourceNodeId(sourceId)
+            .destNodeId(destId)
+            .longueur(request.getLongueur())
+            .typeFibre(request.getTypeFibre())
+            .statut(request.getStatut())
+            .build();
+        return toDto(cheminFibreRepository.save(cf));
     }
 
     @Transactional
-    public CheminFibreDto updateCheminFibre(Long id, CheminFibreRequest request) {
-        CheminFibre cf = cheminFibreRepository.findById(id)
-                .orElseThrow(() -> new NetworkResourceNotFoundException("CheminFibre", id));
+    public CheminFibreDto updateCheminFibre(
+        Long id,
+        CheminFibreRequest request
+    ) {
+        CheminFibre cf = cheminFibreRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new NetworkResourceNotFoundException("CheminFibre", id)
+            );
 
         // Resolve source and destination IDs
-        Long sourceId = resolveNodeId(request.getSourceNodeId(), request.getSourceNodeType(), request.getSourceNodeName(), "source");
-        Long destId = resolveNodeId(request.getDestNodeId(), request.getDestNodeType(), request.getDestNodeName(), "destination");
+        Long sourceId = resolveNodeId(
+            request.getSourceNodeId(),
+            request.getSourceNodeType(),
+            request.getSourceNodeName(),
+            "source"
+        );
+        Long destId = resolveNodeId(
+            request.getDestNodeId(),
+            request.getDestNodeType(),
+            request.getDestNodeName(),
+            "destination"
+        );
 
         if (sourceId.equals(destId)) {
-            throw new NetworkValidationException("Le nœud source et le nœud destination ne peuvent pas être identiques.");
+            throw new NetworkValidationException(
+                "Le nœud source et le nœud destination ne peuvent pas être identiques."
+            );
         }
 
         cf.setSourceNodeId(sourceId);
@@ -406,14 +572,58 @@ public class NetworkService {
         cf.setLongueur(request.getLongueur());
         cf.setTypeFibre(request.getTypeFibre());
         cf.setStatut(request.getStatut());
-        return CheminFibreDto.fromEntity(cheminFibreRepository.save(cf));
+        return toDto(cheminFibreRepository.save(cf));
+    }
+
+    private String[] resolveNodeInfo(Long nodeId) {
+        return datacenterRepository
+            .findById(nodeId)
+            .map(d -> new String[] { "DATACENTER", d.getNom() })
+            .or(() ->
+                repartiteurRepository
+                    .findById(nodeId)
+                    .map(r -> new String[] { "REPARTITEUR", r.getNom() })
+            )
+            .or(() ->
+                splitterRepository
+                    .findById(nodeId)
+                    .map(s -> new String[] { "SPLITTER", s.getRatio() })
+            )
+            .or(() ->
+                boiteClientRepository
+                    .findById(nodeId)
+                    .map(b -> new String[] { "BOITE_CLIENT", b.getNom() })
+            )
+            .or(() ->
+                equipementRepository
+                    .findById(nodeId)
+                    .map(e -> new String[] { "EQUIPEMENT", e.getNom() })
+            )
+            .orElse(new String[] { "INCONNU", "ID:" + nodeId });
+    }
+
+    private CheminFibreDto toDto(CheminFibre c) {
+        String[] src = resolveNodeInfo(c.getSourceNodeId());
+        String[] dst = resolveNodeInfo(c.getDestNodeId());
+        return CheminFibreDto.builder()
+            .id(c.getId())
+            .sourceNodeId(c.getSourceNodeId())
+            .sourceNodeType(src[0])
+            .sourceNodeName(src[1])
+            .destNodeId(c.getDestNodeId())
+            .destNodeType(dst[0])
+            .destNodeName(dst[1])
+            .longueur(c.getLongueur())
+            .typeFibre(c.getTypeFibre())
+            .statut(c.getStatut())
+            .build();
     }
 
     /**
      * Resolves a node ID from either:
      * 1. Direct ID (if provided)
      * 2. Type + Name lookup (if provided)
-     * 
+     *
      * @param directId Direct node ID (optional)
      * @param nodeType Type of node: DATACENTER, REPARTITEUR, SPLITTER, BOITE_CLIENT, EQUIPEMENT
      * @param nodeName Name of the node to lookup
@@ -421,7 +631,12 @@ public class NetworkService {
      * @return Resolved node ID
      * @throws NetworkValidationException if resolution fails
      */
-    private Long resolveNodeId(Long directId, String nodeType, String nodeName, String fieldName) {
+    private Long resolveNodeId(
+        Long directId,
+        String nodeType,
+        String nodeName,
+        String fieldName
+    ) {
         // Option 1: Direct ID provided
         if (directId != null) {
             return directId;
@@ -430,45 +645,81 @@ public class NetworkService {
         // Option 2: Type + Name provided
         if (nodeType != null && nodeName != null) {
             return switch (nodeType.toUpperCase()) {
-                case "DATACENTER" -> datacenterRepository.findByNomIgnoreCase(nodeName)
-                        .map(Datacenter::getId)
-                        .orElseThrow(() -> new NetworkValidationException(
-                                "Datacenter non trouvé pour le nœud " + fieldName + " : " + nodeName));
-                
-                case "REPARTITEUR" -> repartiteurRepository.findByNomIgnoreCase(nodeName)
-                        .map(Repartiteur::getId)
-                        .orElseThrow(() -> new NetworkValidationException(
-                                "Répartiteur non trouvé pour le nœud " + fieldName + " : " + nodeName));
-                
+                case "DATACENTER" -> datacenterRepository
+                    .findByNomIgnoreCase(nodeName)
+                    .map(Datacenter::getId)
+                    .orElseThrow(() ->
+                        new NetworkValidationException(
+                            "Datacenter non trouvé pour le nœud " +
+                                fieldName +
+                                " : " +
+                                nodeName
+                        )
+                    );
+                case "REPARTITEUR" -> repartiteurRepository
+                    .findByNomIgnoreCase(nodeName)
+                    .map(Repartiteur::getId)
+                    .orElseThrow(() ->
+                        new NetworkValidationException(
+                            "Répartiteur non trouvé pour le nœud " +
+                                fieldName +
+                                " : " +
+                                nodeName
+                        )
+                    );
                 case "SPLITTER" -> {
                     // Splitters don't have unique names, so we use ratio as identifier
-                    List<Splitter> splitters = splitterRepository.findByRatio(nodeName);
+                    List<Splitter> splitters = splitterRepository.findByRatio(
+                        nodeName
+                    );
                     if (splitters.isEmpty()) {
                         throw new NetworkValidationException(
-                                "Splitter non trouvé pour le nœud " + fieldName + " avec ratio : " + nodeName);
+                            "Splitter non trouvé pour le nœud " +
+                                fieldName +
+                                " avec ratio : " +
+                                nodeName
+                        );
                     }
                     yield splitters.get(0).getId(); // Take first match
                 }
-                
-                case "BOITE_CLIENT" -> boiteClientRepository.findByNom(nodeName)
-                        .map(BoiteClient::getId)
-                        .orElseThrow(() -> new NetworkValidationException(
-                                "Boîte client non trouvée pour le nœud " + fieldName + " : " + nodeName));
-                
-                case "EQUIPEMENT" -> equipementRepository.findByNom(nodeName)
-                        .map(Equipement::getId)
-                        .orElseThrow(() -> new NetworkValidationException(
-                                "Équipement non trouvé pour le nœud " + fieldName + " : " + nodeName));
-                
+                case "BOITE_CLIENT" -> boiteClientRepository
+                    .findByNom(nodeName)
+                    .map(BoiteClient::getId)
+                    .orElseThrow(() ->
+                        new NetworkValidationException(
+                            "Boîte client non trouvée pour le nœud " +
+                                fieldName +
+                                " : " +
+                                nodeName
+                        )
+                    );
+                case "EQUIPEMENT" -> equipementRepository
+                    .findByNom(nodeName)
+                    .map(Equipement::getId)
+                    .orElseThrow(() ->
+                        new NetworkValidationException(
+                            "Équipement non trouvé pour le nœud " +
+                                fieldName +
+                                " : " +
+                                nodeName
+                        )
+                    );
                 default -> throw new NetworkValidationException(
-                        "Type de nœud invalide pour " + fieldName + " : " + nodeType + 
-                        ". Valeurs autorisées : DATACENTER, REPARTITEUR, SPLITTER, BOITE_CLIENT, EQUIPEMENT");
+                    "Type de nœud invalide pour " +
+                        fieldName +
+                        " : " +
+                        nodeType +
+                        ". Valeurs autorisées : DATACENTER, REPARTITEUR, SPLITTER, BOITE_CLIENT, EQUIPEMENT"
+                );
             };
         }
 
         // Neither option provided
         throw new NetworkValidationException(
-                "Le nœud " + fieldName + " doit être spécifié soit par ID direct, soit par type + nom.");
+            "Le nœud " +
+                fieldName +
+                " doit être spécifié soit par ID direct, soit par type + nom."
+        );
     }
 
     @Transactional
@@ -492,10 +743,13 @@ public class NetworkService {
     public EligibilityResponse checkEligibility(String adresse) {
         // Without coordinates we cannot do a geospatial check — return ineligible
         return EligibilityResponse.builder()
-                .eligible(false)
-                .message("Vérification d'éligibilité par adresse texte non supportée. " +
-                         "Veuillez fournir les coordonnées GPS (latitude/longitude) pour l'adresse : " + adresse)
-                .build();
+            .eligible(false)
+            .message(
+                "Vérification d'éligibilité par adresse texte non supportée. " +
+                    "Veuillez fournir les coordonnées GPS (latitude/longitude) pour l'adresse : " +
+                    adresse
+            )
+            .build();
     }
 
     /**
@@ -508,40 +762,64 @@ public class NetworkService {
      * @param latitude  WGS84 latitude of the address to check
      * @return eligibility result with distance and nearest box name
      */
-    public EligibilityResponse checkEligibility(double longitude, double latitude) {
+    public EligibilityResponse checkEligibility(
+        double longitude,
+        double latitude
+    ) {
         validateCoordinates(longitude, latitude);
 
         // Format: POINT(longitude latitude) — WKT standard, US locale ensures dot decimal separator
-        String pointWkt = String.format(java.util.Locale.US, "POINT(%f %f)", longitude, latitude);
+        String pointWkt = String.format(
+            java.util.Locale.US,
+            "POINT(%f %f)",
+            longitude,
+            latitude
+        );
 
-        return boiteClientRepository.findNearestAvailableBox(pointWkt)
-                .map(bc -> {
-                    double distM = haversineMetres(
-                            latitude, longitude,
-                            bc.getCoordinate().getY(), bc.getCoordinate().getX());
+        return boiteClientRepository
+            .findNearestAvailableBox(pointWkt)
+            .map(bc -> {
+                double distM = haversineMetres(
+                    latitude,
+                    longitude,
+                    bc.getCoordinate().getY(),
+                    bc.getCoordinate().getX()
+                );
 
-                    if (distM > MAX_ELIGIBILITY_DISTANCE_METRES) {
-                        return EligibilityResponse.builder()
-                                .eligible(false)
-                                .distanceMetres(distM)
-                                .message("La boîte client la plus proche est à %.0f m — hors zone éligible (max %d m)."
-                                        .formatted(distM, (int) MAX_ELIGIBILITY_DISTANCE_METRES))
-                                .build();
-                    }
-
+                if (distM > MAX_ELIGIBILITY_DISTANCE_METRES) {
                     return EligibilityResponse.builder()
-                            .eligible(true)
-                            .technologieDisponible("FTTH")
-                            .boiteClientNom(bc.getNom())
-                            .distanceMetres(distM)
-                            .message("Adresse éligible FTTH. Boîte disponible : %s (%.0f m)."
-                                    .formatted(bc.getNom(), distM))
-                            .build();
-                })
-                .orElseGet(() -> EligibilityResponse.builder()
                         .eligible(false)
-                        .message("Aucune boîte client disponible trouvée dans la base.")
-                        .build());
+                        .distanceMetres(distM)
+                        .message(
+                            "La boîte client la plus proche est à %.0f m — hors zone éligible (max %d m).".formatted(
+                                distM,
+                                (int) MAX_ELIGIBILITY_DISTANCE_METRES
+                            )
+                        )
+                        .build();
+                }
+
+                return EligibilityResponse.builder()
+                    .eligible(true)
+                    .technologieDisponible("FTTH")
+                    .boiteClientNom(bc.getNom())
+                    .distanceMetres(distM)
+                    .message(
+                        "Adresse éligible FTTH. Boîte disponible : %s (%.0f m).".formatted(
+                            bc.getNom(),
+                            distM
+                        )
+                    )
+                    .build();
+            })
+            .orElseGet(() ->
+                EligibilityResponse.builder()
+                    .eligible(false)
+                    .message(
+                        "Aucune boîte client disponible trouvée dans la base."
+                    )
+                    .build()
+            );
     }
 
     // =========================================================================
@@ -549,58 +827,83 @@ public class NetworkService {
     // =========================================================================
 
     public NetworkStatusResponse getNetworkStatus() {
-        List<CheminFibre> incidents = cheminFibreRepository.findByStatut("INCIDENT");
-        long boitesAvecPortsLibres = boiteClientRepository.findAvailableBoxes().size();
+        List<CheminFibre> incidents = cheminFibreRepository.findByStatut(
+            "INCIDENT"
+        );
+        long boitesAvecPortsLibres = boiteClientRepository
+            .findAvailableBoxes()
+            .size();
 
         return NetworkStatusResponse.builder()
-                .totalDatacenters(datacenterRepository.count())
-                .totalRepartiteurs(repartiteurRepository.count())
-                .totalSplitters(splitterRepository.count())
-                .totalEquipements(equipementRepository.count())
-                .totalBoitesClient(boiteClientRepository.count())
-                .boitesAvecPortsLibres(boitesAvecPortsLibres)
-                .totalCheminsFibre(cheminFibreRepository.count())
-                .cheminsEnIncident(incidents.size())
-                .activeIncidents(incidents.stream().map(CheminFibreDto::fromEntity).toList())
-                .build();
-     }
+            .totalDatacenters(datacenterRepository.count())
+            .totalRepartiteurs(repartiteurRepository.count())
+            .totalSplitters(splitterRepository.count())
+            .totalEquipements(equipementRepository.count())
+            .totalBoitesClient(boiteClientRepository.count())
+            .boitesAvecPortsLibres(boitesAvecPortsLibres)
+            .totalCheminsFibre(cheminFibreRepository.count())
+            .cheminsEnIncident(incidents.size())
+            .activeIncidents(incidents.stream().map(this::toDto).toList())
+            .build();
+    }
 
-     public List<IncidentStatsDto> getIncidentStats(int days) {
-         List<com.fibre.optique.support.entity.Ticket> tickets = ticketRepository.findAll();
-         List<IncidentStatsDto> stats = new java.util.ArrayList<>();
-         java.time.LocalDate today = java.time.LocalDate.now();
+    public List<IncidentStatsDto> getIncidentStats(int days) {
+        List<com.fibre.optique.support.entity.Ticket> tickets =
+            ticketRepository.findAll();
+        List<IncidentStatsDto> stats = new java.util.ArrayList<>();
+        java.time.LocalDate today = java.time.LocalDate.now();
 
-         for (int i = days - 1; i >= 0; i--) {
-             java.time.LocalDate date = today.minusDays(i);
+        for (int i = days - 1; i >= 0; i--) {
+            java.time.LocalDate date = today.minusDays(i);
 
-             long newIncidents = tickets.stream()
-                     .filter(t -> ("TECHNIQUE".equals(t.getCategorie()) || "CONNEXION".equals(t.getCategorie()))
-                             && t.getDateCreation() != null
-                             && java.time.LocalDate.ofInstant(t.getDateCreation(), java.time.ZoneId.systemDefault()).equals(date))
-                     .count();
+            long newIncidents = tickets
+                .stream()
+                .filter(
+                    t ->
+                        ("TECHNIQUE".equals(t.getCategorie()) ||
+                            "CONNEXION".equals(t.getCategorie())) &&
+                        t.getDateCreation() != null &&
+                        java.time.LocalDate.ofInstant(
+                            t.getDateCreation(),
+                            java.time.ZoneId.systemDefault()
+                        ).equals(date)
+                )
+                .count();
 
-             long resolved = tickets.stream()
-                     .filter(t -> ("TECHNIQUE".equals(t.getCategorie()) || "CONNEXION".equals(t.getCategorie()))
-                             && t.getDateResolution() != null
-                             && java.time.LocalDate.ofInstant(t.getDateResolution(), java.time.ZoneId.systemDefault()).equals(date))
-                     .count();
+            long resolved = tickets
+                .stream()
+                .filter(
+                    t ->
+                        ("TECHNIQUE".equals(t.getCategorie()) ||
+                            "CONNEXION".equals(t.getCategorie())) &&
+                        t.getDateResolution() != null &&
+                        java.time.LocalDate.ofInstant(
+                            t.getDateResolution(),
+                            java.time.ZoneId.systemDefault()
+                        ).equals(date)
+                )
+                .count();
 
-             stats.add(IncidentStatsDto.builder()
-                     .date(date.toString())
-                     .newIncidents(newIncidents)
-                     .resolved(resolved)
-                     .build());
-         }
-         return stats;
-     }
+            stats.add(
+                IncidentStatsDto.builder()
+                    .date(date.toString())
+                    .newIncidents(newIncidents)
+                    .resolved(resolved)
+                    .build()
+            );
+        }
+        return stats;
+    }
 
-     // =========================================================================
-     // PRIVATE HELPERS
+    // =========================================================================
+    // PRIVATE HELPERS
     // =========================================================================
 
     /** Builds a JTS Point with WGS84 SRID from longitude/latitude. */
     private Point buildPoint(double longitude, double latitude) {
-        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+        Point p = geometryFactory.createPoint(
+            new Coordinate(longitude, latitude)
+        );
         p.setSRID(SRID);
         return p;
     }
@@ -608,7 +911,11 @@ public class NetworkService {
     private void validateCoordinates(double lon, double lat) {
         if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
             throw new NetworkValidationException(
-                    "Coordonnées GPS invalides — longitude: " + lon + ", latitude: " + lat);
+                "Coordonnées GPS invalides — longitude: " +
+                    lon +
+                    ", latitude: " +
+                    lat
+            );
         }
     }
 
@@ -616,13 +923,21 @@ public class NetworkService {
      * Haversine formula — computes great-circle distance in metres between two GPS points.
      * Used as a fallback / double-check after the DB spatial query.
      */
-    static double haversineMetres(double lat1, double lon1, double lat2, double lon2) {
+    static double haversineMetres(
+        double lat1,
+        double lon1,
+        double lat2,
+        double lon2
+    ) {
         final double R = 6_371_000.0; // Earth radius in metres
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(Math.toRadians(lat1)) *
+                Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 }

@@ -9,5 +9,7 @@ public interface CheminFibreRepository extends JpaRepository<CheminFibre, Long> 
 
     List<CheminFibre> findByStatut(String statut);
 
+    long countByStatut(String statut);
+
     List<CheminFibre> findBySourceNodeIdOrDestNodeId(Long sourceNodeId, Long destNodeId);
 }

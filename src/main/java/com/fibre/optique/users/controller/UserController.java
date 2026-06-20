@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -41,14 +42,16 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> createUser(
-            @Valid @RequestBody UserCreateRequest request) {
-
+        @Valid @RequestBody UserCreateRequest request
+    ) {
         // Default to CLIENT if no role specified
         if (request.getRole() == null) {
             request.setRole(Role.CLIENT);
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            userService.createUser(request)
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -60,6 +63,30 @@ public class UserController {
     public ResponseEntity<UserDto> getMyProfile(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(UserDto.fromEntity(user));
+    }
+
+    // -------------------------------------------------------------------------
+    // COMMERCIAL — technicien list for scheduling
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the list of active TECHNICIEN accounts.
+     * Accessible to COMMERCIAL and ADMIN so the schedule dialog can populate its dropdown.
+     */
+    @GetMapping("/techniciens")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL')")
+    public ResponseEntity<Page<UserDto>> getTechniciens(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "200") int size
+    ) {
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by("nom").ascending()
+        );
+        return ResponseEntity.ok(
+            userService.searchUsers(null, Role.TECHNICIEN, true, pageable)
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -78,14 +105,20 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserDto>> getAllUsers(
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) Role role,
-            @RequestParam(required = false) Boolean enabled,
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return ResponseEntity.ok(userService.searchUsers(query, role, enabled, pageable));
+        @RequestParam(required = false) String query,
+        @RequestParam(required = false) Role role,
+        @RequestParam(required = false) Boolean enabled,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by("createdAt").descending()
+        );
+        return ResponseEntity.ok(
+            userService.searchUsers(query, role, enabled, pageable)
+        );
     }
 
     /** Get a single user by id — ADMIN only. */
@@ -108,10 +141,10 @@ public class UserController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UserUpdateRequest request,
-            Authentication authentication) {
-
+        @PathVariable Long id,
+        @Valid @RequestBody UserUpdateRequest request,
+        Authentication authentication
+    ) {
         User currentUser = (User) authentication.getPrincipal();
         boolean isAdmin = isAdmin(authentication);
 
@@ -143,7 +176,11 @@ public class UserController {
     // -------------------------------------------------------------------------
 
     private boolean isAdmin(Authentication auth) {
-        return auth != null && auth.getAuthorities()
-                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        return (
+            auth != null &&
+            auth
+                .getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
     }
 }

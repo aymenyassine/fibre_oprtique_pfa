@@ -3,6 +3,7 @@ package com.fibre.optique.request.controller;
 import com.fibre.optique.request.dto.*;
 import com.fibre.optique.request.entity.DemandeStatus;
 import com.fibre.optique.request.service.RequestService;
+import com.fibre.optique.users.entity.Role;
 import com.fibre.optique.users.entity.User;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -38,18 +39,47 @@ public class RequestController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL', 'TECHNICIEN', 'SUPPORT')")
     public ResponseEntity<Page<DemandeRaccordementDto>> getAll(
-            @RequestParam(required = false) DemandeStatus statut,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size) {
+        @RequestParam(required = false) DemandeStatus statut,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size,
+        Authentication authentication
+    ) {
+        User currentUser = (User) authentication.getPrincipal();
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return ResponseEntity.ok(requestService.search(statut, keyword, pageable));
+        // Technicien : ne voit que les demandes qui lui sont assignées
+        if (currentUser.getRole() == Role.TECHNICIEN) {
+            Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("datePlanification").ascending()
+            );
+            return ResponseEntity.ok(
+                requestService.searchForTechnicien(
+                    currentUser.getId(),
+                    statut,
+                    keyword,
+                    pageable
+                )
+            );
+        }
+
+        // Autres rôles (ADMIN, COMMERCIAL, SUPPORT) : liste complète
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by("createdAt").descending()
+        );
+        return ResponseEntity.ok(
+            requestService.search(statut, keyword, pageable)
+        );
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL', 'TECHNICIEN', 'SUPPORT')")
-    public ResponseEntity<DemandeRaccordementDto> getById(@PathVariable Long id) {
+    public ResponseEntity<DemandeRaccordementDto> getById(
+        @PathVariable Long id
+    ) {
         return ResponseEntity.ok(requestService.getById(id));
     }
 
@@ -63,9 +93,11 @@ public class RequestController {
      */
     @PostMapping
     public ResponseEntity<DemandeRaccordementDto> submit(
-            @Valid @RequestBody DemandeRaccordementRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(requestService.submitRequest(request));
+        @Valid @RequestBody DemandeRaccordementRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            requestService.submitRequest(request)
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -75,8 +107,9 @@ public class RequestController {
     @PutMapping("/{id}/devis")
     @PreAuthorize("hasAnyRole('COMMERCIAL', 'ADMIN')")
     public ResponseEntity<DemandeRaccordementDto> setDevis(
-            @PathVariable Long id,
-            @Valid @RequestBody DevisRequest request) {
+        @PathVariable Long id,
+        @Valid @RequestBody DevisRequest request
+    ) {
         return ResponseEntity.ok(requestService.setDevis(id, request));
     }
 
@@ -92,8 +125,10 @@ public class RequestController {
      *   their own demandes anyway).
      */
     @PutMapping("/{id}/accept")
-    public ResponseEntity<DemandeRaccordementDto> accept(@PathVariable Long id,
-                                                          Authentication authentication) {
+    public ResponseEntity<DemandeRaccordementDto> accept(
+        @PathVariable Long id,
+        Authentication authentication
+    ) {
         if (isStaff(authentication)) {
             // Staff accepts on behalf of the prospect — no ownership check needed
             return ResponseEntity.ok(requestService.acceptDevis(id));
@@ -102,7 +137,9 @@ public class RequestController {
         // Non-staff: verify the authenticated user's email matches the demande's prospectEmail
         DemandeRaccordementDto demande = requestService.getById(id);
         User currentUser = (User) authentication.getPrincipal();
-        if (!demande.getProspectEmail().equalsIgnoreCase(currentUser.getEmail())) {
+        if (
+            !demande.getProspectEmail().equalsIgnoreCase(currentUser.getEmail())
+        ) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(requestService.acceptDevis(id));
@@ -115,8 +152,9 @@ public class RequestController {
     @PutMapping("/{id}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL')")
     public ResponseEntity<DemandeRaccordementDto> schedule(
-            @PathVariable Long id,
-            @Valid @RequestBody ScheduleRequest request) {
+        @PathVariable Long id,
+        @Valid @RequestBody ScheduleRequest request
+    ) {
         return ResponseEntity.ok(requestService.schedule(id, request));
     }
 
@@ -126,7 +164,9 @@ public class RequestController {
 
     @PutMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('TECHNICIEN', 'ADMIN')")
-    public ResponseEntity<DemandeRaccordementDto> complete(@PathVariable Long id) {
+    public ResponseEntity<DemandeRaccordementDto> complete(
+        @PathVariable Long id
+    ) {
         return ResponseEntity.ok(requestService.complete(id));
     }
 
@@ -137,8 +177,9 @@ public class RequestController {
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN', 'COMMERCIAL')")
     public ResponseEntity<DemandeRaccordementDto> reject(
-            @PathVariable Long id,
-            @RequestBody(required = false) RejectRequest request) {
+        @PathVariable Long id,
+        @RequestBody(required = false) RejectRequest request
+    ) {
         String raison = request != null ? request.getRaison() : null;
         return ResponseEntity.ok(requestService.reject(id, raison));
     }

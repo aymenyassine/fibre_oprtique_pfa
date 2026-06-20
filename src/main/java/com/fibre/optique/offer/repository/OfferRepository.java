@@ -14,6 +14,8 @@ public interface OfferRepository extends JpaRepository<Offre, Long> {
     /** All active offers — used for public catalogue. */
     List<Offre> findByActifTrue();
 
+    long countByActifTrue();
+
     /** Active offers filtered by technology. */
     List<Offre> findByActifTrueAndTechnologie(Technologie technologie);
 

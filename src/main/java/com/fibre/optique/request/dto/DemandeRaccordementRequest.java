@@ -41,4 +41,7 @@ public class DemandeRaccordementRequest {
     @DecimalMin(value = "-90.0", message = "Latitude invalide")
     @DecimalMax(value = "90.0",  message = "Latitude invalide")
     private Double latitude;
+
+    @NotNull(message = "L'offre est obligatoire")
+    private Long ifOffer;
 }

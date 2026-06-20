@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    long countByRole(Role role);
+
     @Query("""
             SELECT u FROM User u
             WHERE (:query IS NULL

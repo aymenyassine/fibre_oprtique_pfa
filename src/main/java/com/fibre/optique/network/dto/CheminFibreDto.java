@@ -1,6 +1,5 @@
 package com.fibre.optique.network.dto;
 
-import com.fibre.optique.network.entity.CheminFibre;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,19 +9,12 @@ public class CheminFibreDto {
 
     private Long id;
     private Long sourceNodeId;
+    private String sourceNodeType;
+    private String sourceNodeName;
     private Long destNodeId;
+    private String destNodeType;
+    private String destNodeName;
     private Double longueur;
     private String typeFibre;
     private String statut;
-
-    public static CheminFibreDto fromEntity(CheminFibre c) {
-        return CheminFibreDto.builder()
-                .id(c.getId())
-                .sourceNodeId(c.getSourceNodeId())
-                .destNodeId(c.getDestNodeId())
-                .longueur(c.getLongueur())
-                .typeFibre(c.getTypeFibre())
-                .statut(c.getStatut())
-                .build();
-    }
 }

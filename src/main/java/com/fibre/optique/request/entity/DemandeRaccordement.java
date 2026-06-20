@@ -2,10 +2,9 @@ package com.fibre.optique.request.entity;
 
 import com.fibre.optique.users.entity.User;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.Instant;
+import lombok.*;
 
 @Entity
 @Table(name = "demande_raccordement")
@@ -59,6 +58,9 @@ public class DemandeRaccordement {
 
     @Column(name = "commentaire_traitement", columnDefinition = "TEXT")
     private String commentaireTraitement;
+
+    @Column(name = "raison_annulation", length = 50)
+    private String raisonAnnulation;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

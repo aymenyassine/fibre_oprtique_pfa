@@ -20,6 +20,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByStatut(TicketStatus statut);
 
+    long countByStatut(TicketStatus statut);
+
     /** Used by SLA scheduler — open tickets past their deadline. */
     @Query("""
             SELECT t FROM Ticket t
