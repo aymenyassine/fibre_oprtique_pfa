@@ -18,7 +18,7 @@ DELETE FROM users WHERE email NOT IN ('admin@fibreoptique.com');
 
 INSERT INTO users (nom, prenom, email, telephone, password_hash, role, enabled, email_verified, adresse, ville, code_postal) VALUES
 -- Administrateurs
-('Dupont', 'Jean', 'admin@example.com', '+33123456789', '$2a$10$Dizx9kWLZRxROlFwQ.eFVuVWaOkpaL02pbRSIXFyXqfJDX4l8G/ZO', 'ADMIN', TRUE, TRUE, '123 Rue Admin', 'Casablanca', '20000'),
+('Nom', 'Jean', 'admin@example.com', '+33123456789', '$2a$10$Dizx9kWLZRxROlFwQ.eFVuVWaOkpaL02pbRSIXFyXqfJDX4l8G/ZO', 'ADMIN', TRUE, TRUE, '123 Rue Admin', 'Casablanca', '20000'),
 
 -- Techniciens
 ('Bouvier', 'Pierre', 'tech1@example.com', '+212612345678', '$2a$10$Dizx9kWLZRxROlFwQ.eFVuVWaOkpaL02pbRSIXFyXqfJDX4l8G/ZO', 'TECHNICIEN', TRUE, TRUE, '456 Rue Tech', 'Marrakech', '40000'),

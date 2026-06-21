@@ -20,11 +20,15 @@ import org.springframework.stereotype.Component;
 /**
  * Central event listener for all application domain events.
  *
- * <p>Each handler runs {@code @Async} (thread pool configured in AppConfig)
- * so notification delivery never blocks the calling transaction.</p>
+ * <p>
+ * Each handler runs {@code @Async} (thread pool configured in AppConfig)
+ * so notification delivery never blocks the calling transaction.
+ * </p>
  *
- * <p>In development (Maildev on port 1025), all emails are intercepted locally.
- * Switch {@code spring.mail.*} properties for production SMTP.</p>
+ * <p>
+ * In development (Maildev on port 1025), all emails are intercepted locally.
+ * Switch {@code spring.mail.*} properties for production SMTP.
+ * </p>
  */
 @Component
 public class NotificationEventListener {
@@ -53,14 +57,13 @@ public class NotificationEventListener {
                 event.getClientEmail(),
                 "Votre abonnement Fibre Optique est activé !",
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre abonnement à l'offre "%s" (n°%d) est maintenant actif.
-                Votre contrat est disponible dans votre espace client.
+                        Votre abonnement à l'offre "%s" (n°%d) est maintenant actif.
+                        Votre contrat est disponible dans votre espace client.
 
-                Bienvenue chez Fibre Optique Platform !
-                """.formatted(event.getClientNom(), event.getOfferNom(), event.getAbonnementId())
-        );
+                        Bienvenue chez Fibre Optique Platform !
+                        """.formatted(event.getClientNom(), event.getOfferNom(), event.getAbonnementId()));
     }
 
     @Async
@@ -71,25 +74,25 @@ public class NotificationEventListener {
 
         String subject = switch (event.getNewStatus()) {
             case SUSPENDU -> "Votre abonnement a été suspendu";
-            case RESILIE  -> "Votre abonnement a été résilié";
-            default       -> "Mise à jour de votre abonnement";
+            case RESILIE -> "Votre abonnement a été résilié";
+            default -> "Mise à jour de votre abonnement";
         };
 
         String body = switch (event.getNewStatus()) {
             case SUSPENDU ->
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre abonnement (n°%d) a été temporairement suspendu.
-                Pour toute question, contactez notre service client.
-                """.formatted(event.getClientNom(), event.getAbonnementId());
+                        Votre abonnement (n°%d) a été temporairement suspendu.
+                        Pour toute question, contactez notre service client.
+                        """.formatted(event.getClientNom(), event.getAbonnementId());
             case RESILIE ->
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre abonnement (n°%d) a été résilié.
-                Nous espérons vous revoir bientôt.
-                """.formatted(event.getClientNom(), event.getAbonnementId());
+                        Votre abonnement (n°%d) a été résilié.
+                        Nous espérons vous revoir bientôt.
+                        """.formatted(event.getClientNom(), event.getAbonnementId());
             default -> "Statut de votre abonnement mis à jour : " + event.getNewStatus();
         };
 
@@ -109,14 +112,13 @@ public class NotificationEventListener {
                 event.getClientEmail(),
                 "Votre facture " + event.getReference() + " est disponible",
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre facture %s d'un montant de %.2f € TTC est disponible
-                dans votre espace client.
+                        Votre facture %s d'un montant de %.2f MAD TTC est disponible
+                        dans votre espace client.
 
-                Merci de régler dans les 30 jours.
-                """.formatted(event.getClientNom(), event.getReference(), event.getMontantTTC())
-        );
+                        Merci de régler dans les 30 jours.
+                        """.formatted(event.getClientNom(), event.getReference(), event.getMontantTTC()));
     }
 
     @Async
@@ -128,15 +130,14 @@ public class NotificationEventListener {
                 event.getClientEmail(),
                 "Relance : facture " + event.getReference() + " impayée",
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre facture %s d'un montant de %.2f € TTC est en retard de paiement.
-                Veuillez régulariser votre situation au plus tôt pour éviter la suspension
-                de votre abonnement.
+                        Votre facture %s d'un montant de %.2f MAD TTC est en retard de paiement.
+                        Veuillez régulariser votre situation au plus tôt pour éviter la suspension
+                        de votre abonnement.
 
-                Service facturation Fibre Optique Platform
-                """.formatted(event.getClientNom(), event.getReference(), event.getMontantTTC())
-        );
+                        Service facturation Fibre Optique Platform
+                        """.formatted(event.getClientNom(), event.getReference(), event.getMontantTTC()));
     }
 
     // =========================================================================
@@ -152,17 +153,16 @@ public class NotificationEventListener {
                 event.getProspectEmail(),
                 "Votre demande de raccordement a bien été reçue",
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Nous avons bien reçu votre demande de raccordement (n°%d)
-                pour l'adresse : %s
+                        Nous avons bien reçu votre demande de raccordement (n°%d)
+                        pour l'adresse : %s
 
-                Notre équipe commerciale va étudier votre éligibilité et vous
-                contactera dans les plus brefs délais.
+                        Notre équipe commerciale va étudier votre éligibilité et vous
+                        contactera dans les plus brefs délais.
 
-                Fibre Optique Platform
-                """.formatted(event.getProspectNom(), event.getDemandeId(), event.getAdresse())
-        );
+                        Fibre Optique Platform
+                        """.formatted(event.getProspectNom(), event.getDemandeId(), event.getAdresse()));
     }
 
     @Async
@@ -174,15 +174,14 @@ public class NotificationEventListener {
                 event.getProspectEmail(),
                 "Votre raccordement est terminé — Bienvenue !",
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre installation fibre (demande n°%d) est maintenant terminée.
-                Votre compte client a été créé. Vous pouvez vous connecter avec
-                votre adresse email et réinitialiser votre mot de passe.
+                        Votre installation fibre (demande n°%d) est maintenant terminée.
+                        Votre compte client a été créé. Vous pouvez vous connecter avec
+                        votre adresse email et réinitialiser votre mot de passe.
 
-                Bienvenue chez Fibre Optique Platform !
-                """.formatted(event.getProspectNom(), event.getDemandeId())
-        );
+                        Bienvenue chez Fibre Optique Platform !
+                        """.formatted(event.getProspectNom(), event.getDemandeId()));
     }
 
     // =========================================================================
@@ -198,16 +197,15 @@ public class NotificationEventListener {
                 event.getClientEmail(),
                 "Ticket d'assistance créé : " + event.getTitre(),
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                Votre ticket d'assistance (n°%d) a bien été enregistré.
-                Priorité : %s
+                        Votre ticket d'assistance (n°%d) a bien été enregistré.
+                        Priorité : %s
 
-                Notre équipe support va traiter votre demande dans les meilleurs délais.
+                        Notre équipe support va traiter votre demande dans les meilleurs délais.
 
-                Fibre Optique Platform — Support
-                """.formatted(event.getClientNom(), event.getTicketId(), event.getPriorite())
-        );
+                        Fibre Optique Platform — Support
+                        """.formatted(event.getClientNom(), event.getTicketId(), event.getPriorite()));
     }
 
     @Async
@@ -219,22 +217,21 @@ public class NotificationEventListener {
                 event.getRecipientEmail(),
                 "Nouvelle réponse sur votre ticket n°" + event.getTicketId(),
                 """
-                Bonjour %s,
+                        Bonjour %s,
 
-                %s a ajouté une réponse à votre ticket (n°%d) :
+                        %s a ajouté une réponse à votre ticket (n°%d) :
 
-                "%s"
+                        "%s"
 
-                Connectez-vous à votre espace pour voir la réponse complète et continuer
-                la conversation.
+                        Connectez-vous à votre espace pour voir la réponse complète et continuer
+                        la conversation.
 
-                Fibre Optique Platform — Support
-                """.formatted(
+                        Fibre Optique Platform — Support
+                        """.formatted(
                         event.getRecipientNom(),
                         event.getAuteurNom(),
                         event.getTicketId(),
-                        event.getMessagePreview())
-        );
+                        event.getMessagePreview()));
     }
 
     @Async
@@ -248,20 +245,19 @@ public class NotificationEventListener {
                 adminEmail,
                 "[ALERTE SLA] Ticket #" + event.getTicketId() + " — " + event.getTitre(),
                 """
-                ALERTE : Le SLA du ticket n°%d a été dépassé.
+                        ALERTE : Le SLA du ticket n°%d a été dépassé.
 
-                Titre    : %s
-                Client   : %s
-                Priorité : escaladée à %s
+                        Titre    : %s
+                        Client   : %s
+                        Priorité : escaladée à %s
 
-                Veuillez prendre en charge ce ticket immédiatement.
+                        Veuillez prendre en charge ce ticket immédiatement.
 
-                Fibre Optique Platform — Système automatique
-                """.formatted(
+                        Fibre Optique Platform — Système automatique
+                        """.formatted(
                         event.getTicketId(),
                         event.getTitre(),
                         event.getClientEmail(),
-                        event.getNewPriority())
-        );
+                        event.getNewPriority()));
     }
 }

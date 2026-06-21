@@ -43,9 +43,9 @@ public class BillingService {
     private final ApplicationEventPublisher eventPublisher;
 
     public BillingService(FactureRepository factureRepository,
-                           SubscriptionService subscriptionService,
-                           InvoicePdfService invoicePdfService,
-                           ApplicationEventPublisher eventPublisher) {
+            SubscriptionService subscriptionService,
+            InvoicePdfService invoicePdfService,
+            ApplicationEventPublisher eventPublisher) {
         this.factureRepository = factureRepository;
         this.subscriptionService = subscriptionService;
         this.invoicePdfService = invoicePdfService;
@@ -72,7 +72,7 @@ public class BillingService {
 
     /** Paginated, filtered invoice list — admin / staff use. */
     public Page<FactureDto> search(Long clientId, FactureStatus statut,
-                                    LocalDate from, LocalDate to, Pageable pageable) {
+            LocalDate from, LocalDate to, Pageable pageable) {
         return factureRepository.search(clientId, statut, from, to, pageable)
                 .map(FactureDto::fromEntity);
     }
@@ -91,10 +91,13 @@ public class BillingService {
     }
 
     private boolean invoicePdfFileExists(String key) {
-        if (key == null) return false;
+        if (key == null)
+            return false;
         java.nio.file.Path filePath = java.nio.file.Paths.get(key);
-        if (java.nio.file.Files.exists(filePath)) return true;
-        if (java.nio.file.Files.exists(java.nio.file.Paths.get(".").resolve(key))) return true;
+        if (java.nio.file.Files.exists(filePath))
+            return true;
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get(".").resolve(key)))
+            return true;
         return java.nio.file.Files.exists(java.nio.file.Paths.get("./data").resolve(key));
     }
 
@@ -114,14 +117,15 @@ public class BillingService {
             throw new BillingValidationException("Cette facture est déjà réglée : " + facture.getReference());
         }
         if (facture.getStatut() == FactureStatus.ANNULEE) {
-            throw new BillingValidationException("Impossible de régler une facture annulée : " + facture.getReference());
+            throw new BillingValidationException(
+                    "Impossible de régler une facture annulée : " + facture.getReference());
         }
 
         // Tolerance of 1 cent to handle rounding
         if (request.getMontant().subtract(facture.getMontantTTC()).abs()
                 .compareTo(new BigDecimal("0.01")) > 0) {
             throw new BillingValidationException(
-                    "Le montant réglé (%.2f €) ne correspond pas au montant TTC de la facture (%.2f €)."
+                    "Le montant réglé (%.2f MAD) ne correspond pas au montant TTC de la facture (%.2f MAD)."
                             .formatted(request.getMontant(), facture.getMontantTTC()));
         }
 
@@ -154,7 +158,7 @@ public class BillingService {
         List<Facture> all = factureRepository.findAll();
 
         LocalDate firstOfMonth = LocalDate.now().withDayOfMonth(1);
-        LocalDate lastOfMonth  = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+        LocalDate lastOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
 
         BigDecimal ca = all.stream()
                 .filter(f -> f.getStatut() == FactureStatus.PAYEE
@@ -243,7 +247,7 @@ public class BillingService {
     public void generateMonthlyInvoices() {
         LocalDate today = LocalDate.now();
         LocalDate monthStart = today.withDayOfMonth(1);
-        LocalDate monthEnd   = today.withDayOfMonth(today.lengthOfMonth());
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
 
         List<Abonnement> activeSubscriptions = subscriptionService.getActiveSubscriptionEntities();
         log.info("Monthly billing: processing {} active subscriptions", activeSubscriptions.size());
@@ -277,8 +281,7 @@ public class BillingService {
                         facture.getClient().getEmail(),
                         facture.getClient().getNom(),
                         facture.getReference(),
-                        facture.getMontantTTC()
-                ));
+                        facture.getMontantTTC()));
 
             } catch (Exception e) {
                 log.error("Failed to generate invoice for subscription {}: {}",
@@ -310,8 +313,7 @@ public class BillingService {
                     facture.getClient().getEmail(),
                     facture.getClient().getNom(),
                     facture.getReference(),
-                    facture.getMontantTTC()
-            ));
+                    facture.getMontantTTC()));
         }
     }
 
@@ -326,7 +328,7 @@ public class BillingService {
 
     private Facture buildInvoice(Abonnement abonnement, LocalDate emission) {
         BigDecimal prixHT = abonnement.getOffre().getPrixHT();
-        BigDecimal tva    = abonnement.getOffre().getTauxTVA() != null
+        BigDecimal tva = abonnement.getOffre().getTauxTVA() != null
                 ? abonnement.getOffre().getTauxTVA()
                 : new BigDecimal("20.00");
         BigDecimal prixTTC = prixHT
